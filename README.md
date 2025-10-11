@@ -1,10 +1,17 @@
 <p align="center">
-  <img src="assets/llm_guard.svg" alt="LlmGuard" width="150"/>
+  <img src="assets/LlmGuard.svg" alt="LlmGuard" width="150"/>
 </p>
 
 # LlmGuard
 
 **AI Firewall and Guardrails for LLM-based Elixir Applications**
+
+[![Elixir](https://img.shields.io/badge/elixir-1.14+-purple.svg)](https://elixir-lang.org)
+[![OTP](https://img.shields.io/badge/otp-25+-red.svg)](https://www.erlang.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/North-Shore-AI/LlmGuard/blob/main/LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-hexdocs-blueviolet.svg)](https://hexdocs.pm/llm_guard)
+
+---
 
 LlmGuard is a comprehensive security framework for LLM-powered Elixir applications. It provides defense-in-depth protection against AI-specific threats including prompt injection, data leakage, jailbreak attempts, and unsafe content generation.
 

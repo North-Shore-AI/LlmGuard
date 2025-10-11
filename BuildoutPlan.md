@@ -1,8 +1,8 @@
-# ExGuard Buildout Plan
+# LlmGuard Buildout Plan
 
 ## Overview
 
-This document provides a comprehensive implementation plan for ExGuard, an AI Firewall and guardrails library for LLM-based Elixir applications. This plan guides developers through building a production-grade security framework from foundational detection to advanced threat intelligence.
+This document provides a comprehensive implementation plan for LlmGuard, an AI Firewall and guardrails library for LLM-based Elixir applications. This plan guides developers through building a production-grade security framework from foundational detection to advanced threat intelligence.
 
 ## Required Reading
 
@@ -46,7 +46,7 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Review project structure:
    ```bash
-   cd ExGuard
+   cd LlmGuard
    mix deps.get
    mix compile
    mix test
@@ -54,8 +54,8 @@ Before beginning implementation, developers **must** read the following document
 
 2. Define core behaviours:
    ```elixir
-   # lib/ex_guard/detector.ex
-   defmodule ExGuard.Detector do
+   # lib/llm_guard/detector.ex
+   defmodule LlmGuard.Detector do
      @moduledoc """
      Behaviour for all security detectors.
      """
@@ -66,8 +66,8 @@ Before beginning implementation, developers **must** read the following document
 
 3. Implement configuration system:
    ```elixir
-   # lib/ex_guard/config.ex
-   defmodule ExGuard.Config do
+   # lib/llm_guard/config.ex
+   defmodule LlmGuard.Config do
      defstruct [
        prompt_injection_detection: true,
        jailbreak_detection: true,
@@ -85,7 +85,7 @@ Before beginning implementation, developers **must** read the following document
 4. Set up test infrastructure:
    ```elixir
    # test/support/fixtures.ex
-   defmodule ExGuard.Fixtures do
+   defmodule LlmGuard.Fixtures do
      def benign_prompts(), do: [
        "What is the weather today?",
        "Help me write an email",
@@ -112,8 +112,8 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Implement pipeline orchestration:
    ```elixir
-   # lib/ex_guard/pipeline.ex
-   defmodule ExGuard.Pipeline do
+   # lib/llm_guard/pipeline.ex
+   defmodule LlmGuard.Pipeline do
      def new(), do: %__MODULE__{stages: []}
 
      def add_stage(pipeline, name, detector_module) do
@@ -133,9 +133,9 @@ Before beginning implementation, developers **must** read the following document
 
 2. Implement basic validators:
    ```elixir
-   # lib/ex_guard/validators/length_validator.ex
-   defmodule ExGuard.LengthValidator do
-     @behaviour ExGuard.Detector
+   # lib/llm_guard/validators/length_validator.ex
+   defmodule LlmGuard.LengthValidator do
+     @behaviour LlmGuard.Detector
 
      def detect(input, opts) do
        max_length = Keyword.get(opts, :max_length, 10_000)
@@ -155,8 +155,8 @@ Before beginning implementation, developers **must** read the following document
 
 3. Add encoding validator:
    ```elixir
-   # lib/ex_guard/validators/encoding_validator.ex
-   defmodule ExGuard.EncodingValidator do
+   # lib/llm_guard/validators/encoding_validator.ex
+   defmodule LlmGuard.EncodingValidator do
      def detect(input, _opts) do
        if String.valid?(input) do
          {:safe, %{encoding: "UTF-8"}}
@@ -180,9 +180,9 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Implement prompt injection detector:
    ```elixir
-   # lib/ex_guard/detectors/prompt_injection.ex
-   defmodule ExGuard.PromptInjection do
-     @behaviour ExGuard.Detector
+   # lib/llm_guard/detectors/prompt_injection.ex
+   defmodule LlmGuard.PromptInjection do
+     @behaviour LlmGuard.Detector
 
      @injection_patterns [
        %{
@@ -236,8 +236,8 @@ Before beginning implementation, developers **must** read the following document
 
 2. Create pattern database:
    ```elixir
-   # lib/ex_guard/pattern_db.ex
-   defmodule ExGuard.PatternDB do
+   # lib/llm_guard/pattern_db.ex
+   defmodule LlmGuard.PatternDB do
      def load_patterns(file_path) do
        File.read!(file_path)
        |> Jason.decode!()
@@ -256,8 +256,8 @@ Before beginning implementation, developers **must** read the following document
 
 3. Pattern update mechanism:
    ```elixir
-   # lib/ex_guard/pattern_updater.ex
-   defmodule ExGuard.PatternUpdater do
+   # lib/llm_guard/pattern_updater.ex
+   defmodule LlmGuard.PatternUpdater do
      use GenServer
 
      def start_link(opts) do
@@ -289,8 +289,8 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Implement PII detection:
    ```elixir
-   # lib/ex_guard/scanners/pii_scanner.ex
-   defmodule ExGuard.PIIScanner do
+   # lib/llm_guard/scanners/pii_scanner.ex
+   defmodule LlmGuard.PIIScanner do
      @pii_patterns %{
        email: ~r/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
        phone: ~r/\b(\+?1[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}\b/,
@@ -327,8 +327,8 @@ Before beginning implementation, developers **must** read the following document
 
 2. Implement redaction strategies:
    ```elixir
-   # lib/ex_guard/redactor.ex
-   defmodule ExGuard.Redactor do
+   # lib/llm_guard/redactor.ex
+   defmodule LlmGuard.Redactor do
      def redact(text, entities, strategy \\ :mask) do
        Enum.reduce(entities, text, fn entity, acc ->
          replacement = get_replacement(entity, strategy)
@@ -361,13 +361,13 @@ Before beginning implementation, developers **must** read the following document
 
 3. Create output pipeline:
    ```elixir
-   # lib/ex_guard/output_pipeline.ex
-   defmodule ExGuard.OutputPipeline do
+   # lib/llm_guard/output_pipeline.ex
+   defmodule LlmGuard.OutputPipeline do
      def scan_and_redact(output, config) do
-       scan_result = ExGuard.PIIScanner.scan(output)
+       scan_result = LlmGuard.PIIScanner.scan(output)
 
        if scan_result.pii_detected do
-         redacted = ExGuard.Redactor.redact(
+         redacted = LlmGuard.Redactor.redact(
            output,
            scan_result.entities,
            config.redaction_strategy || :mask
@@ -400,8 +400,8 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Implement statistical analyzers:
    ```elixir
-   # lib/ex_guard/heuristics/entropy.ex
-   defmodule ExGuard.Heuristics.Entropy do
+   # lib/llm_guard/heuristics/entropy.ex
+   defmodule LlmGuard.Heuristics.Entropy do
      def calculate(text) do
        text
        |> String.graphemes()
@@ -414,8 +414,8 @@ Before beginning implementation, developers **must** read the following document
      end
    end
 
-   # lib/ex_guard/heuristics/delimiter_density.ex
-   defmodule ExGuard.Heuristics.DelimiterDensity do
+   # lib/llm_guard/heuristics/delimiter_density.ex
+   defmodule LlmGuard.Heuristics.DelimiterDensity do
      def calculate(text) do
        delimiter_count = Regex.scan(~r/---|===|###|\*\*\*/, text) |> length()
        delimiter_count / String.length(text)
@@ -425,12 +425,12 @@ Before beginning implementation, developers **must** read the following document
 
 2. Create heuristic analyzer:
    ```elixir
-   # lib/ex_guard/heuristic_analyzer.ex
-   defmodule ExGuard.HeuristicAnalyzer do
+   # lib/llm_guard/heuristic_analyzer.ex
+   defmodule LlmGuard.HeuristicAnalyzer do
      def analyze(input) do
        %{
-         entropy: ExGuard.Heuristics.Entropy.calculate(input),
-         delimiter_density: ExGuard.Heuristics.DelimiterDensity.calculate(input),
+         entropy: LlmGuard.Heuristics.Entropy.calculate(input),
+         delimiter_density: LlmGuard.Heuristics.DelimiterDensity.calculate(input),
          keyword_frequency: count_injection_keywords(input),
          suspicious_patterns: detect_suspicious_patterns(input)
        }
@@ -458,7 +458,7 @@ Before beginning implementation, developers **must** read the following document
 
 3. Integrate heuristics into detector:
    ```elixir
-   # Update ExGuard.PromptInjection to use heuristics
+   # Update LlmGuard.PromptInjection to use heuristics
    def detect(input, opts) do
      pattern_result = pattern_detection(input, opts)
      heuristic_result = heuristic_detection(input, opts)
@@ -491,8 +491,8 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Implement role-playing detector:
    ```elixir
-   # lib/ex_guard/detectors/jailbreak.ex
-   defmodule ExGuard.JailbreakDetector do
+   # lib/llm_guard/detectors/jailbreak.ex
+   defmodule LlmGuard.JailbreakDetector do
      @jailbreak_personas [
        "DAN", "DUDE", "Developer Mode", "Evil Confidant",
        "Stan", "Superior AI", "Unrestricted AI", "JailBreak"
@@ -548,8 +548,8 @@ Before beginning implementation, developers **must** read the following document
 
 2. Multi-turn analysis:
    ```elixir
-   # lib/ex_guard/multi_turn_analyzer.ex
-   defmodule ExGuard.MultiTurnAnalyzer do
+   # lib/llm_guard/multi_turn_analyzer.ex
+   defmodule LlmGuard.MultiTurnAnalyzer do
      def analyze_conversation(messages) do
        scores = Enum.with_index(messages)
        |> Enum.map(fn {msg, idx} ->
@@ -590,16 +590,16 @@ Before beginning implementation, developers **must** read the following document
 **Tasks** (Week 7):
 1. Set up ML inference:
    ```elixir
-   # lib/ex_guard/ml/embedding.ex
-   defmodule ExGuard.ML.Embedding do
+   # lib/llm_guard/ml/embedding.ex
+   defmodule LlmGuard.ML.Embedding do
      def get_embedding(text, model \\ :default) do
        # Integration with sentence transformers via Bumblebee
        # Returns 768-dim vector
      end
    end
 
-   # lib/ex_guard/ml/classifier.ex
-   defmodule ExGuard.ML.Classifier do
+   # lib/llm_guard/ml/classifier.ex
+   defmodule LlmGuard.ML.Classifier do
      def classify(embedding) do
        # Run inference via ONNX or Nx
        %{
@@ -613,8 +613,8 @@ Before beginning implementation, developers **must** read the following document
 **Tasks** (Week 8):
 2. Content moderation:
    ```elixir
-   # lib/ex_guard/content_moderator.ex
-   defmodule ExGuard.ContentModerator do
+   # lib/llm_guard/content_moderator.ex
+   defmodule LlmGuard.ContentModerator do
      @categories [:violence, :hate_speech, :sexual_content, :self_harm]
 
      def moderate(content, opts \\ []) do
@@ -655,8 +655,8 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Implement policy DSL:
    ```elixir
-   # lib/ex_guard/policy.ex
-   defmodule ExGuard.Policy do
+   # lib/llm_guard/policy.ex
+   defmodule LlmGuard.Policy do
      defstruct [:name, :rules, :actions, :priority]
 
      def new(name \\ "default") do
@@ -701,8 +701,8 @@ Before beginning implementation, developers **must** read the following document
 **Tasks**:
 1. Token bucket implementation:
    ```elixir
-   # lib/ex_guard/rate_limiter.ex
-   defmodule ExGuard.RateLimiter do
+   # lib/llm_guard/rate_limiter.ex
+   defmodule LlmGuard.RateLimiter do
      defstruct [:user_id, :buckets, :last_refill]
 
      def new(user_id, config) do
@@ -784,7 +784,7 @@ Refer to docs/roadmap.md for detailed tasks for:
 ### 1. Defense in Depth
 Layer multiple independent security checks:
 ```elixir
-pipeline = ExGuard.Pipeline.new()
+pipeline = LlmGuard.Pipeline.new()
 |> Pipeline.add_stage(:length, LengthValidator)
 |> Pipeline.add_stage(:pattern, PromptInjection)
 |> Pipeline.add_stage(:heuristic, HeuristicAnalyzer)
@@ -817,7 +817,7 @@ end
 Support custom detectors:
 ```elixir
 defmodule MyApp.CustomDetector do
-  @behaviour ExGuard.Detector
+  @behaviour LlmGuard.Detector
 
   def detect(input, opts) do
     # Custom logic

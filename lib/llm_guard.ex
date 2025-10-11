@@ -1,6 +1,6 @@
-defmodule ExGuard do
+defmodule LlmGuard do
   @moduledoc """
-  Documentation for `ExGuard`.
+  Documentation for `LlmGuard`.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule ExGuard do
 
   ## Examples
 
-      iex> ExGuard.hello()
+      iex> LlmGuard.hello()
       :world
 
   """

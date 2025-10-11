@@ -1,12 +1,12 @@
-defmodule ExGuard.MixProject do
+defmodule LlmGuard.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/North-Shore-AI/ExGuard"
+  @source_url "https://github.com/North-Shore-AI/LlmGuard"
 
   def project do
     [
-      app: :ex_guard,
+      app: :llm_guard,
       version: @version,
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
@@ -16,7 +16,7 @@ defmodule ExGuard.MixProject do
       docs: docs(),
       source_url: @source_url,
       homepage_url: @source_url,
-      name: "ExGuard"
+      name: "LlmGuard"
     ]
   end
 
@@ -38,13 +38,13 @@ defmodule ExGuard.MixProject do
 
   defp package do
     [
-      name: "ex_guard",
+      name: "llm_guard",
       description: description(),
       files: ~w(lib mix.exs README.md CHANGELOG.md LICENSE docs assets),
       licenses: ["MIT"],
       links: %{
         "GitHub" => @source_url,
-        "Online documentation" => "https://hexdocs.pm/ex_guard"
+        "Online documentation" => "https://hexdocs.pm/llm_guard"
       },
       maintainers: ["nshkrdotcom"]
     ]
@@ -53,7 +53,7 @@ defmodule ExGuard.MixProject do
   defp docs do
     [
       main: "readme",
-      name: "ExGuard",
+      name: "LlmGuard",
       source_ref: "v#{@version}",
       source_url: @source_url,
       homepage_url: @source_url,
@@ -66,7 +66,7 @@ defmodule ExGuard.MixProject do
         "docs/roadmap.md"
       ],
       assets: %{"assets" => "assets"},
-      logo: "assets/ex_guard.svg",
+      logo: "assets/llm_guard.svg",
       before_closing_head_tag: &mermaid_config/1
     ]
   end

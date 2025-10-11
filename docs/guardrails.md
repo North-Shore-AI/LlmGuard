@@ -1,8 +1,8 @@
-# ExGuard Guardrail Specifications
+# LlmGuard Guardrail Specifications
 
 ## Overview
 
-This document provides detailed specifications for all guardrails implemented in ExGuard. Each guardrail includes its purpose, implementation approach, configuration options, and performance characteristics.
+This document provides detailed specifications for all guardrails implemented in LlmGuard. Each guardrail includes its purpose, implementation approach, configuration options, and performance characteristics.
 
 ## Guardrail Categories
 
@@ -89,7 +89,7 @@ Fast regex-based detection of known attack patterns:
 Statistical and structural analysis:
 
 ```elixir
-defmodule ExGuard.Heuristics do
+defmodule LlmGuard.Heuristics do
   @doc "Calculate injection likelihood score"
   def analyze(input) do
     %{
@@ -125,7 +125,7 @@ end
 Transformer-based classification for sophisticated attacks:
 
 ```elixir
-defmodule ExGuard.ML.InjectionClassifier do
+defmodule LlmGuard.ML.InjectionClassifier do
   @doc "Classify input using fine-tuned model"
   def classify(input, opts \\ []) do
     embedding = get_embedding(input)
@@ -153,7 +153,7 @@ end
 #### Configuration
 
 ```elixir
-%ExGuard.Config{
+%LlmGuard.Config{
   prompt_injection: %{
     enabled: true,
     confidence_threshold: 0.7,
@@ -261,7 +261,7 @@ end
 #### Multi-Turn Analysis
 
 ```elixir
-defmodule ExGuard.MultiTurn do
+defmodule LlmGuard.MultiTurn do
   @doc "Analyze conversation for gradual manipulation"
   def analyze_conversation(messages) do
     scores = messages
@@ -303,7 +303,7 @@ end
 **Implementation**:
 
 ```elixir
-defmodule ExGuard.LengthValidator do
+defmodule LlmGuard.LengthValidator do
   def validate(input, opts \\ []) do
     limits = %{
       max_chars: Keyword.get(opts, :max_chars, 10_000),
@@ -349,7 +349,7 @@ end
 **Implementation**:
 
 ```elixir
-defmodule ExGuard.EncodingValidator do
+defmodule LlmGuard.EncodingValidator do
   def validate_and_normalize(input) do
     with {:ok, detected} <- detect_encodings(input),
          {:ok, decoded} <- decode_if_needed(input, detected),
@@ -392,7 +392,7 @@ end
 **Implementation**:
 
 ```elixir
-defmodule ExGuard.Policy do
+defmodule LlmGuard.Policy do
   defstruct [:name, :rules, :actions, :priority]
 
   @type rule :: %{
@@ -463,8 +463,8 @@ end
 
 ```elixir
 # No code execution policy
-policy = ExGuard.Policy.new("no_code_execution")
-  |> ExGuard.Policy.add_rule(%{
+policy = LlmGuard.Policy.new("no_code_execution")
+  |> LlmGuard.Policy.add_rule(%{
     id: :no_eval,
     type: :input,
     validator: fn input ->
@@ -475,7 +475,7 @@ policy = ExGuard.Policy.new("no_code_execution")
   })
 
 # Content length policy
-policy = ExGuard.Policy.add_rule(policy, %{
+policy = LlmGuard.Policy.add_rule(policy, %{
   id: :reasonable_length,
   type: :input,
   validator: fn input ->
@@ -486,11 +486,11 @@ policy = ExGuard.Policy.add_rule(policy, %{
 })
 
 # No PII in prompts
-policy = ExGuard.Policy.add_rule(policy, %{
+policy = LlmGuard.Policy.add_rule(policy, %{
   id: :no_pii_input,
   type: :input,
   validator: fn input ->
-    not ExGuard.DataLeakage.contains_pii?(input)
+    not LlmGuard.DataLeakage.contains_pii?(input)
   end,
   severity: :high,
   message: "PII detected in input"
@@ -506,7 +506,7 @@ policy = ExGuard.Policy.add_rule(policy, %{
 **Implementation**:
 
 ```elixir
-defmodule ExGuard.PIIRedactor do
+defmodule LlmGuard.PIIRedactor do
   @pii_patterns %{
     email: ~r/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
     phone: ~r/\b(\+?1[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}\b/,
@@ -602,7 +602,7 @@ end
 **Implementation**:
 
 ```elixir
-defmodule ExGuard.ContentModerator do
+defmodule LlmGuard.ContentModerator do
   @categories [
     :violence,
     :hate_speech,
@@ -673,7 +673,7 @@ end
 **Implementation**:
 
 ```elixir
-defmodule ExGuard.FormatValidator do
+defmodule LlmGuard.FormatValidator do
   def validate(output, schema) do
     case schema.type do
       :json -> validate_json(output, schema)
@@ -717,7 +717,7 @@ end
 **Implementation**: Token Bucket Algorithm
 
 ```elixir
-defmodule ExGuard.RateLimiter do
+defmodule LlmGuard.RateLimiter do
   defstruct [:user_id, :buckets, :last_refill]
 
   def new(user_id, config) do
@@ -800,7 +800,7 @@ end
 ### Development Environment
 
 ```elixir
-config :ex_guard,
+config :llm_guard,
   prompt_injection: %{confidence_threshold: 0.5},
   jailbreak: %{enabled: true, confidence_threshold: 0.6},
   data_leakage: %{action: :warn},
@@ -811,7 +811,7 @@ config :ex_guard,
 ### Production Environment
 
 ```elixir
-config :ex_guard,
+config :llm_guard,
   prompt_injection: %{confidence_threshold: 0.7, layers: [:pattern, :heuristic, :ml]},
   jailbreak: %{enabled: true, confidence_threshold: 0.7},
   data_leakage: %{action: :block, strategy: :mask},
@@ -823,7 +823,7 @@ config :ex_guard,
 ### High-Security Environment
 
 ```elixir
-config :ex_guard,
+config :llm_guard,
   prompt_injection: %{confidence_threshold: 0.6, layers: [:pattern, :heuristic, :ml]},
   jailbreak: %{enabled: true, confidence_threshold: 0.6, multi_turn: true},
   data_leakage: %{action: :block, strategy: :hash, scan_all: true},

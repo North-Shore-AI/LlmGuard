@@ -1,8 +1,8 @@
-# ExGuard Implementation Roadmap
+# LlmGuard Implementation Roadmap
 
 ## Overview
 
-This roadmap outlines the phased implementation of ExGuard, from core functionality to advanced features. Each phase builds on the previous one, ensuring a stable foundation while progressively adding capabilities.
+This roadmap outlines the phased implementation of LlmGuard, from core functionality to advanced features. Each phase builds on the previous one, ensuring a stable foundation while progressively adding capabilities.
 
 ## Phase 1: Foundation (Weeks 1-4)
 
@@ -16,8 +16,8 @@ Establish core architecture and basic detection capabilities
 **Tasks:**
 - [x] Initialize Elixir project
 - [ ] Define core behaviours and protocols
-  - `ExGuard.Detector` behaviour
-  - `ExGuard.Guardrail` protocol
+  - `LlmGuard.Detector` behaviour
+  - `LlmGuard.Guardrail` protocol
 - [ ] Implement configuration system
   - Config struct and validation
   - Environment-based configuration

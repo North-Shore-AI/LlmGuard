@@ -17,10 +17,10 @@ erl_crash.dump
 *.ez
 
 # Ignore package tarball (built via "mix hex.build").
-ex_guard-*.tar
+llm_guard-*.tar
 
 # Ignore unpacked hex package directory
-ex_guard-*/
+llm_guard-*/
 
 # Temporary files, for example, from tests.
 /tmp/

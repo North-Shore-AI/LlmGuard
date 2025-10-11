@@ -66,7 +66,7 @@ defmodule LlmGuard.MixProject do
         "docs/roadmap.md"
       ],
       assets: %{"assets" => "assets"},
-      logo: "assets/llm_guard.svg",
+      logo: "assets/LlmGuard.svg",
       before_closing_head_tag: &mermaid_config/1
     ]
   end

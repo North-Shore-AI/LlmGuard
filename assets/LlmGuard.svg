@@ -19,24 +19,26 @@
         stroke-width="1"
         opacity="0.3"/>
 
-  <!-- AI Circuit pattern -->
-  <circle cx="100" cy="110" r="8" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
-  <circle cx="80" cy="130" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
-  <circle cx="120" cy="130" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
-  <circle cx="100" cy="150" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+  <g transform="translate(-50, -92.25) scale(1.5)">
+    <!-- AI Circuit pattern -->
+    <circle cx="100" cy="110" r="8" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+    <circle cx="80" cy="130" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+    <circle cx="120" cy="130" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+    <circle cx="100" cy="150" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
 
-  <!-- Connecting lines -->
-  <line x1="100" y1="110" x2="80" y2="130" stroke="#FFD700" stroke-width="2"/>
-  <line x1="100" y1="110" x2="120" y2="130" stroke="#FFD700" stroke-width="2"/>
-  <line x1="80" y1="130" x2="100" y2="150" stroke="#FFD700" stroke-width="2"/>
-  <line x1="120" y1="130" x2="100" y2="150" stroke="#FFD700" stroke-width="2"/>
+    <!-- Connecting lines -->
+    <line x1="100" y1="110" x2="80" y2="130" stroke="#FFD700" stroke-width="2"/>
+    <line x1="100" y1="110" x2="120" y2="130" stroke="#FFD700" stroke-width="2"/>
+    <line x1="80" y1="130" x2="100" y2="150" stroke="#FFD700" stroke-width="2"/>
+    <line x1="120" y1="130" x2="100" y2="150" stroke="#FFD700" stroke-width="2"/>
 
-  <!-- Guard checkmark -->
-  <path d="M85 125 L95 135 L115 115" stroke="#FFFFFF" stroke-width="4"
-        stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Guard checkmark -->
+    <path d="M85 125 L95 135 L115 115" stroke="#FFFFFF" stroke-width="4"
+          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Security lock icon -->
-  <rect x="90" y="160" width="20" height="15" rx="2" fill="#EF4444" stroke="#DC2626" stroke-width="1.5"/>
-  <path d="M95 160 L95 155 Q95 150 100 150 Q105 150 105 155 L105 160"
-        stroke="#DC2626" stroke-width="2" fill="none"/>
+    <!-- Security lock icon -->
+    <rect x="90" y="160" width="20" height="15" rx="2" fill="#EF4444" stroke="#DC2626" stroke-width="1.5"/>
+    <path d="M95 160 L95 155 Q95 150 100 150 Q105 150 105 155 L105 160"
+          stroke="#DC2626" stroke-width="2" fill="none"/>
+  </g>
 </svg>

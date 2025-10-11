@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Shield background -->
+  <path d="M100 20 L160 40 L160 90 Q160 140 100 180 Q40 140 40 90 L40 40 Z"
+        fill="#4B5563" stroke="#1F2937" stroke-width="3"/>
+
+  <!-- Shield highlight -->
+  <path d="M100 30 L150 45 L150 90 Q150 130 100 165 Q50 130 50 90 L50 45 Z"
+        fill="#6B7280" opacity="0.5"/>
+
+  <!-- AI Circuit pattern -->
+  <circle cx="100" cy="80" r="8" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  <circle cx="80" cy="100" r="6" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  <circle cx="120" cy="100" r="6" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  <circle cx="100" cy="120" r="6" fill="#10B981" stroke="#059669" stroke-width="2"/>
+
+  <!-- Connecting lines -->
+  <line x1="100" y1="80" x2="80" y2="100" stroke="#10B981" stroke-width="2"/>
+  <line x1="100" y1="80" x2="120" y2="100" stroke="#10B981" stroke-width="2"/>
+  <line x1="80" y1="100" x2="100" y2="120" stroke="#10B981" stroke-width="2"/>
+  <line x1="120" y1="100" x2="100" y2="120" stroke="#10B981" stroke-width="2"/>
+
+  <!-- Guard checkmark -->
+  <path d="M85 95 L95 105 L115 85" stroke="#FFFFFF" stroke-width="4"
+        stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Security lock icon -->
+  <rect x="90" y="130" width="20" height="15" rx="2" fill="#EF4444" stroke="#DC2626" stroke-width="1.5"/>
+  <path d="M95 130 L95 125 Q95 120 100 120 Q105 120 105 125 L105 130"
+        stroke="#DC2626" stroke-width="2" fill="none"/>
+</svg>

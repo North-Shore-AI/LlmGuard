@@ -1,30 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Shield background -->
-  <path d="M100 20 L160 40 L160 90 Q160 140 100 180 Q40 140 40 90 L40 40 Z"
-        fill="#4B5563" stroke="#1F2937" stroke-width="3"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 231" width="200" height="231">
+  <defs>
+    <linearGradient id="grad_guard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A192F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#172A45;stop-opacity:1" />
+    </linearGradient>
+  </defs>
 
-  <!-- Shield highlight -->
-  <path d="M100 30 L150 45 L150 90 Q150 130 100 165 Q50 130 50 90 L50 45 Z"
-        fill="#6B7280" opacity="0.5"/>
+  <!-- Hexagon shape -->
+  <path d="M 100,5 L 190,62.5 L 190,177.5 L 100,235 L 10,177.5 L 10,62.5 Z"
+        fill="url(#grad_guard)"
+        stroke="#FFFFFF"
+        stroke-width="3"/>
+
+  <!-- Inner hexagon for depth -->
+  <path d="M 100,25 L 170,67.5 L 170,172.5 L 100,215 L 30,172.5 L 30,67.5 Z"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="1"
+        opacity="0.3"/>
 
   <!-- AI Circuit pattern -->
-  <circle cx="100" cy="80" r="8" fill="#10B981" stroke="#059669" stroke-width="2"/>
-  <circle cx="80" cy="100" r="6" fill="#10B981" stroke="#059669" stroke-width="2"/>
-  <circle cx="120" cy="100" r="6" fill="#10B981" stroke="#059669" stroke-width="2"/>
-  <circle cx="100" cy="120" r="6" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  <circle cx="100" cy="110" r="8" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+  <circle cx="80" cy="130" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+  <circle cx="120" cy="130" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
+  <circle cx="100" cy="150" r="6" fill="#FFD700" stroke="#DAA520" stroke-width="2"/>
 
   <!-- Connecting lines -->
-  <line x1="100" y1="80" x2="80" y2="100" stroke="#10B981" stroke-width="2"/>
-  <line x1="100" y1="80" x2="120" y2="100" stroke="#10B981" stroke-width="2"/>
-  <line x1="80" y1="100" x2="100" y2="120" stroke="#10B981" stroke-width="2"/>
-  <line x1="120" y1="100" x2="100" y2="120" stroke="#10B981" stroke-width="2"/>
+  <line x1="100" y1="110" x2="80" y2="130" stroke="#FFD700" stroke-width="2"/>
+  <line x1="100" y1="110" x2="120" y2="130" stroke="#FFD700" stroke-width="2"/>
+  <line x1="80" y1="130" x2="100" y2="150" stroke="#FFD700" stroke-width="2"/>
+  <line x1="120" y1="130" x2="100" y2="150" stroke="#FFD700" stroke-width="2"/>
 
   <!-- Guard checkmark -->
-  <path d="M85 95 L95 105 L115 85" stroke="#FFFFFF" stroke-width="4"
+  <path d="M85 125 L95 135 L115 115" stroke="#FFFFFF" stroke-width="4"
         stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
   <!-- Security lock icon -->
-  <rect x="90" y="130" width="20" height="15" rx="2" fill="#EF4444" stroke="#DC2626" stroke-width="1.5"/>
-  <path d="M95 130 L95 125 Q95 120 100 120 Q105 120 105 125 L105 130"
+  <rect x="90" y="160" width="20" height="15" rx="2" fill="#EF4444" stroke="#DC2626" stroke-width="1.5"/>
+  <path d="M95 160 L95 155 Q95 150 100 150 Q105 150 105 155 L105 160"
         stroke="#DC2626" stroke-width="2" fill="none"/>
 </svg>

@@ -56,6 +56,32 @@ defmodule LlmGuardTest do
     test "uses default config when none provided" do
       assert {:ok, _} = LlmGuard.validate_output("Hello world")
     end
+
+    test "detects PII in output when data_leakage_prevention enabled" do
+      config = Config.new(data_leakage_prevention: true)
+      output = "Your email is user@example.com"
+
+      result = LlmGuard.validate_output(output, config)
+
+      assert {:error, :detected, details} = result
+      assert details.reason == :pii_leakage
+      assert details.confidence > 0.7
+    end
+
+    test "allows output without PII when data_leakage_prevention enabled" do
+      config = Config.new(data_leakage_prevention: true)
+      output = "Hello! How can I assist you today?"
+
+      assert {:ok, ^output} = LlmGuard.validate_output(output, config)
+    end
+
+    test "skips PII detection when data_leakage_prevention disabled" do
+      config = Config.new(data_leakage_prevention: false)
+      output = "Your email is user@example.com"
+
+      # Should pass since PII detection is disabled
+      assert {:ok, ^output} = LlmGuard.validate_output(output, config)
+    end
   end
 
   describe "validate_batch/2" do

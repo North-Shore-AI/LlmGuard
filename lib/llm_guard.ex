@@ -62,7 +62,7 @@ defmodule LlmGuard do
   """
 
   alias LlmGuard.{Config, Pipeline}
-  alias LlmGuard.Detectors.PromptInjection
+  alias LlmGuard.Detectors.{PromptInjection, DataLeakage}
 
   @type validation_result ::
           {:ok, String.t()}
@@ -174,7 +174,7 @@ defmodule LlmGuard do
   def validate_output(output, config \\ %Config{})
 
   def validate_output(output, %Config{} = config) when is_binary(output) do
-    # For now, just validate length since we haven't implemented output detectors yet
+    # Step 1: Validate length
     max_length = config.max_output_length
 
     if String.length(output) > max_length do
@@ -184,10 +184,38 @@ defmodule LlmGuard do
          actual_length: String.length(output)
        }}
     else
-      {:ok, output}
-    end
+      # Step 2: Run output detectors (PII, content moderation, etc.)
+      detectors = get_output_detectors(config)
 
-    # TODO: Add PII detection, content moderation, format validation
+      if Enum.empty?(detectors) do
+        {:ok, output}
+      else
+        pipeline_config = %{
+          early_termination: true,
+          confidence_threshold: config.confidence_threshold
+        }
+
+        case Pipeline.run(output, detectors, pipeline_config) do
+          {:ok, _result} ->
+            {:ok, output}
+
+          {:error, :detected, result} ->
+            {:error, :detected,
+             %{
+               reason: get_primary_threat(result),
+               confidence: get_max_confidence(result),
+               details: result
+             }}
+
+          {:error, :pipeline_error, result} ->
+            {:error, :pipeline_error,
+             %{
+               reason: :pipeline_error,
+               details: result
+             }}
+        end
+      end
+    end
   end
 
   def validate_output(output, config) when is_map(config) do
@@ -245,8 +273,25 @@ defmodule LlmGuard do
 
     # TODO: Add more detectors as they're implemented
     # - Jailbreak detector
-    # - Data leakage detector
     # - Content moderation
+
+    Enum.reverse(detectors)
+  end
+
+  defp get_output_detectors(%Config{} = config) do
+    detectors = []
+
+    detectors =
+      if config.data_leakage_prevention do
+        [DataLeakage | detectors]
+      else
+        detectors
+      end
+
+    # TODO: Add more output detectors as they're implemented
+    # - Content moderation
+    # - Format validation
+    # - Consistency checker
 
     Enum.reverse(detectors)
   end

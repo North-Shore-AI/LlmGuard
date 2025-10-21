@@ -16,7 +16,23 @@ defmodule LlmGuard.MixProject do
       docs: docs(),
       source_url: @source_url,
       homepage_url: @source_url,
-      name: "LlmGuard"
+      name: "LlmGuard",
+
+      # Testing
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
+
+      # Dialyzer
+      dialyzer: [
+        plt_add_apps: [:ex_unit],
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        flags: [:error_handling, :underspecs, :unmatched_returns]
+      ]
     ]
   end
 
@@ -28,7 +44,23 @@ defmodule LlmGuard.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
+      # Documentation
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+
+      # Testing
+      {:stream_data, "~> 1.0", only: [:test, :dev]},
+      {:mox, "~> 1.0", only: :test},
+
+      # Code quality
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18", only: :test},
+
+      # Performance
+      {:benchee, "~> 1.1", only: :dev},
+
+      # Telemetry
+      {:telemetry, "~> 1.2"}
     ]
   end
 

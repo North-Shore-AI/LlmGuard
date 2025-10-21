@@ -101,7 +101,7 @@ defmodule LlmGuard do
       ...>   config
       ...> )
       iex> details.reason
-      :prompt_injection
+      :instruction_override
   """
   @spec validate_input(String.t(), Config.t() | map()) :: validation_result()
   def validate_input(input, config \\ %Config{})

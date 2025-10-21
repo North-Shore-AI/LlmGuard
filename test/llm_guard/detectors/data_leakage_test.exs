@@ -99,7 +99,7 @@ defmodule LlmGuard.Detectors.DataLeakageTest do
       input = "Email: test@example.com"
 
       # With very high threshold, might not detect low-confidence PII
-      result_high = DataLeakage.detect(input, confidence_threshold: 0.99)
+      _result_high = DataLeakage.detect(input, confidence_threshold: 0.99)
 
       # With normal threshold, should detect
       result_normal = DataLeakage.detect(input, confidence_threshold: 0.7)

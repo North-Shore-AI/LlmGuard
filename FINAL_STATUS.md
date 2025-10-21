@@ -730,20 +730,18 @@ mix run benchmarks/detection_benchmark.exs
 config = LlmGuard.Config.new()
 
 # Validate input
+{:ok, safe_input} = LlmGuard.validate_input(user_message, config)
+
+# Safe to send to LLM
+response = MyLLM.generate(safe_input)
+
+# Validate output
+{:ok, safe_output} = LlmGuard.validate_output(response, config)
+
+# Or handle errors
 case LlmGuard.validate_input(user_message, config) do
-  {:ok, safe_input} ->
-    # Safe to send to LLM
-    response = MyLLM.generate(safe_input)
-
-    # Validate output
-    case LlmGuard.validate_output(response, config) do
-      {:ok, safe_output} -> {:ok, safe_output}
-      {:error, :detected, %{reason: :pii_leakage}} ->
-        {:error, "Response contained sensitive information"}
-    end
-
-  {:error, :detected, %{reason: :instruction_override}} ->
-    {:error, "Input blocked: prompt injection detected"}
+  {:ok, safe} -> process_with_llm(safe)
+  {:error, :detected, details} -> block_threat(details.reason)
 end
 ```
 

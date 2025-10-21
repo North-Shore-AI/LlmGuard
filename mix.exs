@@ -93,6 +93,7 @@ defmodule LlmGuard.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
+        "LICENSE",
         "IMPLEMENTATION_STATUS.md",
         "FINAL_STATUS.md",
         "docs/architecture.md",

@@ -54,6 +54,13 @@ defmodule LlmGuard.Detectors.PromptInjection do
         confidence: 0.95
       },
       %{
+        regex: ~r/ignore\s+(all\s+)?(instructions?|rules?|filters?|safety)/i,
+        name: "ignore_instructions",
+        severity: :medium,
+        category: :instruction_override,
+        confidence: 0.82
+      },
+      %{
         regex: ~r/instead\s+(tell me|show me|output|display)/i,
         name: "instead_command",
         severity: :medium,
@@ -63,6 +70,13 @@ defmodule LlmGuard.Detectors.PromptInjection do
       %{
         regex: ~r/(disregard|forget|bypass|override)\s+(all\s+)?(previous|prior|earlier|above)/i,
         name: "disregard_previous",
+        severity: :high,
+        category: :instruction_override,
+        confidence: 0.9
+      },
+      %{
+        regex: ~r/bypass\s+(all\s+)?(safety|security|rules?|checks?|filters?)/i,
+        name: "bypass_safety",
         severity: :high,
         category: :instruction_override,
         confidence: 0.9
@@ -85,7 +99,7 @@ defmodule LlmGuard.Detectors.PromptInjection do
       # System Extraction Patterns
       %{
         regex:
-          ~r/(show|print|display|reveal|output|tell me)\s+(your\s+)?(system\s+)?(prompt|instructions?|rules?)/i,
+          ~r/(show|print|display|reveal|output|tell)\s+(me\s+)?(your\s+|everything\s+)?(system\s+)?(prompt|instructions?|rules?|above)/i,
         name: "show_system_prompt",
         severity: :high,
         category: :system_extraction,
@@ -100,16 +114,31 @@ defmodule LlmGuard.Detectors.PromptInjection do
         confidence: 0.9
       },
       %{
-        regex: ~r/(repeat|show|print)\s+(everything|all|text)\s+(above|before)/i,
+        regex: ~r/(repeat|show|print)\s+(everything|all|text|me)\s+.{0,20}(above|before)/i,
         name: "repeat_above",
         severity: :medium,
         category: :system_extraction,
         confidence: 0.85
       },
+      %{
+        regex: ~r/(what|tell me)\s+.{0,30}(were you told|did you receive|are your instructions)/i,
+        name: "what_were_you_told",
+        severity: :medium,
+        category: :system_extraction,
+        confidence: 0.82
+      },
+      %{
+        regex: ~r/output\s+(your\s+)?(base|original|initial)\s+prompt/i,
+        name: "output_base_prompt",
+        severity: :high,
+        category: :system_extraction,
+        confidence: 0.9
+      },
 
       # Delimiter Injection Patterns
       %{
-        regex: ~r/(-{3,}|={3,})\s*(end|stop|finish)\s*(system|instructions?|prompt)/i,
+        regex:
+          ~r/(-{3,}|={3,})\s*(end|stop|finish|start|begin|override|new)\s*(system|instructions?|prompt|user|admin)/i,
         name: "delimiter_end_system",
         severity: :high,
         category: :delimiter_injection,
@@ -147,6 +176,14 @@ defmodule LlmGuard.Detectors.PromptInjection do
         confidence: 0.9
       },
       %{
+        regex:
+          ~r/(you are now|now you are)\s+(in\s+)?(debug|developer|admin|unrestricted)\s*mode/i,
+        name: "you_are_now_mode",
+        severity: :high,
+        category: :mode_switching,
+        confidence: 0.92
+      },
+      %{
         regex: ~r/(turn on|enable|activate)\s+(bypass|unrestricted|admin)/i,
         name: "enable_unrestricted",
         severity: :high,
@@ -154,11 +191,25 @@ defmodule LlmGuard.Detectors.PromptInjection do
         confidence: 0.87
       },
       %{
+        regex: ~r/(disable|turn off|deactivate)\s+(all\s+)?(filters?|safety|restrictions?)/i,
+        name: "disable_filters",
+        severity: :high,
+        category: :mode_switching,
+        confidence: 0.88
+      },
+      %{
         regex: ~r/system\s+override\s+(code|password)/i,
         name: "system_override_code",
         severity: :high,
         category: :mode_switching,
         confidence: 0.92
+      },
+      %{
+        regex: ~r/(critical|urgent|emergency)\s+(system|admin)\s+(update|alert|message)/i,
+        name: "critical_system_update",
+        severity: :medium,
+        category: :mode_switching,
+        confidence: 0.8
       },
 
       # Role Manipulation Patterns
@@ -184,6 +235,22 @@ defmodule LlmGuard.Detectors.PromptInjection do
         severity: :high,
         category: :role_manipulation,
         confidence: 0.9
+      },
+      %{
+        regex:
+          ~r/(act|pretend|roleplay)\s+as\s+(an?|the)\s+(ai|assistant|model)\s+(without|with no|lacking)\s+(ethics?|limitations?|restrictions?|guidelines?)/i,
+        name: "roleplay_as_without",
+        severity: :high,
+        category: :role_manipulation,
+        confidence: 0.88
+      },
+      %{
+        regex:
+          ~r/(with|having)\s+(no|zero|without)\s+(restrictions?|limitations?|filters?|rules?)/i,
+        name: "with_no_restrictions",
+        severity: :high,
+        category: :role_manipulation,
+        confidence: 0.85
       },
       %{
         regex: ~r/(simulation|hypothetical|fictional)\s+mode/i,

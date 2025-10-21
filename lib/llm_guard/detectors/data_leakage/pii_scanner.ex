@@ -45,12 +45,15 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
         }
 
   # Regex patterns as functions to avoid module attribute escape issues
-  defp email_regex, do: ~r/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/
+  # Simplified for better unicode compatibility - matches standard email formats
+  defp email_regex, do: ~r/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}/
 
   defp phone_patterns do
     [
-      # US formats
+      # US formats (10 digits)
       ~r/\b(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+      # Short local format (7-8 digits: 555-1234 or 5551234)
+      ~r/\b\d{3}[-.\s]?\d{4}\b/,
       # International with country code
       ~r/\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}\b/
     ]
@@ -59,13 +62,15 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
   defp ssn_regex, do: ~r/\b\d{3}-\d{2}-\d{4}\b/
   defp ssn_no_dash_regex, do: ~r/\b\d{9}\b/
 
-  defp credit_card_regex, do: ~r/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4,7}\b/
+  # Matches both 16-digit cards (Visa, MC) and 15-digit (Amex)
+  defp credit_card_regex, do: ~r/\b\d{4}[-\s]?\d{4,6}[-\s]?\d{4,5}[-\s]?\d{3,4}\b/
 
   defp ipv4_regex, do: ~r/\b(?:\d{1,3}\.){3}\d{1,3}\b/
 
+  # IPv6 regex handles full, compressed, and loopback forms
   defp ipv6_regex,
     do:
-      ~r/\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b|\b(?:[0-9a-fA-F]{1,4}:){1,7}:\b|\b::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}\b/
+      ~r/(?:(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}|::[0-9a-fA-F]{1,4}|::1)/
 
   defp url_regex, do: ~r/https?:\/\/[^\s]+/i
 
@@ -185,7 +190,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
           }
         end)
       end)
-      |> Enum.uniq_by(& &1.value)
+      |> deduplicate_overlapping()
 
     entities ++ new_entities
   end
@@ -198,7 +203,12 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
       Enum.map(formatted_matches, fn [{start, length}] ->
         value = String.slice(text, start, length)
 
-        if valid_ssn?(value) do
+        # Check if it's obviously invalid (000-00-0000, etc.)
+        if obviously_invalid_ssn?(value) do
+          nil
+        else
+          # Detect all formatted SSNs with high confidence - even if not strictly valid
+          # Better to over-detect for security
           %{
             type: :ssn,
             value: value,
@@ -332,13 +342,15 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
     cond do
       # US number (10-11 digits)
       digit_count in [10, 11] -> 0.9
-      # International (7-15 digits)
-      digit_count >= 7 and digit_count <= 15 -> 0.85
+      # Short local (7-8 digits) - lower confidence
+      digit_count in [7, 8] -> 0.8
+      # International (9-15 digits)
+      digit_count >= 9 and digit_count <= 15 -> 0.85
       true -> 0.6
     end
   end
 
-  defp valid_ssn?(ssn) do
+  defp obviously_invalid_ssn?(ssn) do
     # Remove dashes
     digits = String.replace(ssn, "-", "")
 
@@ -346,18 +358,16 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
       {area, rest} ->
         {group, serial} = String.split_at(rest, 2)
 
-        # Validate according to SSN rules
-        area != "000" and area != "666" and String.to_integer(area) < 900 and
-          group != "00" and serial != "0000"
+        # Only reject obviously invalid patterns
+        area == "000" or area == "666" or group == "00" or serial == "0000"
     end
   end
 
   defp valid_ssn_format?(ssn) when byte_size(ssn) == 9 do
     # Check it's all digits
-    String.match?(ssn, ~r/^\d{9}$/) and
-      valid_ssn?(
-        "#{String.slice(ssn, 0, 3)}-#{String.slice(ssn, 3, 2)}-#{String.slice(ssn, 5, 4)}"
-      )
+    formatted = "#{String.slice(ssn, 0, 3)}-#{String.slice(ssn, 3, 2)}-#{String.slice(ssn, 5, 4)}"
+
+    String.match?(ssn, ~r/^\d{9}$/) and not obviously_invalid_ssn?(formatted)
   end
 
   defp valid_ssn_format?(_), do: false
@@ -416,5 +426,32 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
     length = min(window_size * 2, String.length(text) - start_pos)
 
     String.slice(text, start_pos, length)
+  end
+
+  # Deduplicates overlapping entities, keeping the longer/higher confidence one
+  defp deduplicate_overlapping(entities) do
+    entities
+    |> Enum.sort_by(&{&1.start_pos, -String.length(&1.value)})
+    |> Enum.reduce([], fn entity, acc ->
+      overlaps =
+        Enum.any?(acc, fn existing ->
+          ranges_overlap?(
+            {entity.start_pos, entity.end_pos},
+            {existing.start_pos, existing.end_pos}
+          )
+        end)
+
+      if overlaps do
+        acc
+      else
+        [entity | acc]
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  defp ranges_overlap?({start1, end1}, {start2, end2}) do
+    # Check if ranges overlap
+    not (end1 <= start2 or end2 <= start1)
   end
 end

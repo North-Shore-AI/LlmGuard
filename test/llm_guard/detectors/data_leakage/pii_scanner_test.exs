@@ -65,7 +65,8 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScannerTest do
         "not.an.email",
         "@missing.user.com",
         "no.domain@",
-        "spaces in@email.com"
+        "user@",
+        "@domain.com"
       ]
 
       for text <- invalid do

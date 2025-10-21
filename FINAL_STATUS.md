@@ -935,7 +935,7 @@ mix test --profile
 **Document Version:** 1.0  
 **Date:** 2025-10-20  
 **Author:** North Shore AI + Claude Code  
-**Framework Version:** 0.1.0  
+**Framework Version:** 0.2.0  
 **Elixir Version:** ~> 1.14  
 **OTP Version:** 25+  
 

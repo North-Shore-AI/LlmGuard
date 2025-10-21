@@ -2,7 +2,7 @@
 
 **AI Firewall and Guardrails for LLM-based Elixir Applications**
 
-[![Hex.pm](https://img.shields.io/badge/hex-v0.1.0-blue.svg)](https://hex.pm/packages/llm_guard)
+[![Hex.pm](https://img.shields.io/badge/hex-v0.2.0-blue.svg)](https://hex.pm/packages/llm_guard)
 [![Documentation](https://img.shields.io/badge/docs-hexdocs-purple.svg)](https://hexdocs.pm/llm_guard)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -28,7 +28,7 @@ Add to your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:llm_guard, "~> 0.1.0"}
+    {:llm_guard, "~> 0.2.0"}
   ]
 end
 ```
@@ -279,6 +279,6 @@ Built following security best practices and threat models from:
 ---
 
 **Status**: Alpha - Production-ready for prompt injection detection
-**Version**: 0.1.0
+**Version**: 0.2.0
 **Elixir**: ~> 1.14
 **OTP**: 25+

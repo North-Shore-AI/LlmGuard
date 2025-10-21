@@ -377,6 +377,6 @@ The framework is ready for:
 ---
 
 **Generated**: 2025-10-20
-**Framework Version**: 0.1.0
+**Framework Version**: 0.2.0
 **Elixir Version**: 1.14+
 **OTP Version**: 25+

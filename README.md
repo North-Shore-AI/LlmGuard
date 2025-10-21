@@ -242,7 +242,7 @@ open doc/index.html
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Contributions are welcome! Please open an issue or pull request on GitHub.
 
 Areas needing help:
 - Additional detection patterns

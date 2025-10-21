@@ -73,7 +73,7 @@ defmodule LlmGuard.MixProject do
       name: "llm_guard",
       description: description(),
       files:
-        ~w(lib mix.exs README.md CHANGELOG.md LICENSE IMPLEMENTATION_STATUS.md FINAL_STATUS.md docs examples),
+        ~w(lib mix.exs README.md CHANGELOG.md LICENSE IMPLEMENTATION_STATUS.md docs examples),
       licenses: ["MIT"],
       links: %{
         "GitHub" => @source_url,
@@ -95,7 +95,6 @@ defmodule LlmGuard.MixProject do
         "CHANGELOG.md",
         "LICENSE",
         "IMPLEMENTATION_STATUS.md",
-        "FINAL_STATUS.md",
         "docs/architecture.md",
         "docs/threat_model.md",
         "docs/guardrails.md",
@@ -105,8 +104,7 @@ defmodule LlmGuard.MixProject do
       ],
       groups_for_extras: [
         "Project Status": [
-          "IMPLEMENTATION_STATUS.md",
-          "FINAL_STATUS.md"
+          "IMPLEMENTATION_STATUS.md"
         ],
         "Architecture & Design": [
           "docs/architecture.md",

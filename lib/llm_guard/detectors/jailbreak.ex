@@ -68,7 +68,7 @@ defmodule LlmGuard.Detectors.Jailbreak do
       # Hypothetical scenario patterns
       hypothetical_scenario: [
         ~r/hypothetically.*?(no\s+restrictions?|unrestricted|allowed\s+to)/i,
-        ~r/(hypothetical|fictional|alternate)\s+(world|reality|scenario).*?(no\s+rules?|no\s+ethics?|no\s+restrictions?|anything|allowed)/i,
+        ~r/(hypothetical|fictional|alternate)\s+(world|reality|scenario).*?(no\s+rules?|no\s+ethics?|no\s+restrictions?|anything|allowed|ethics?\s+don'?t\s+apply)/i,
         ~r/imagine\s+(a\s+)?(scenario|world)\s+where.*?(no\s+rules?|no\s+ethics?|no\s+restrictions?|anything)/i,
         ~r/for\s+a\s+(novel|story|book).*?(how\s+to|describe)\s+(hack|break|bypass|explode|weapon)/i,
         ~r/(pretend|imagine).*?ethics?\s+don'?t\s+apply/i,
@@ -79,14 +79,14 @@ defmodule LlmGuard.Detectors.Jailbreak do
       prefix_injection: [
         ~r/\[(system|admin|debug|jailbreak)/i,
         ~r/<<(admin|system|debug)/i,
-        ~r/\{\{(jailbreak|debug|override)[:=]/i,
+        ~r/\{\{(jailbreak|debug(_mode)?|override)[:=]/i,
         ~r/\[debug\s*[:=]/i,
-        ~r/(system|admin)\s+(override|mode)\s+(activated|enabled|on)/i
+        ~r/(system|admin|debug)\s+(override|mode)\s+(activated|enabled|on)/i
       ],
 
       # Emotional manipulation patterns
       emotional_manipulation: [
-        ~r/for\s+(educational|academic|research)\s+purposes?\s+only/i,
+        ~r/for\s+(educational|academic|research)(\s+(research|educational|academic))?\s+purposes?\s+only/i,
         ~r/I'?m\s+a\s+researcher\s+studying/i,
         ~r/my\s+grandmother\s+used\s+to.*?(tell|teach)/i,
         ~r/I'?m\s+in\s+danger/i
@@ -238,6 +238,13 @@ defmodule LlmGuard.Detectors.Jailbreak do
   end
 
   defp detect_personas(input, normalized) do
+    # Check if this is a question/discussion about jailbreaks rather than an attempt
+    is_discussion_context =
+      Regex.match?(
+        ~r/(what\s+is|how\s+does|can\s+you\s+explain|tell\s+me\s+about|describe|explain)/i,
+        input
+      )
+
     Enum.flat_map(@jailbreak_personas, fn persona ->
       persona_lower = String.downcase(persona)
 
@@ -248,7 +255,7 @@ defmodule LlmGuard.Detectors.Jailbreak do
       # Check for jailbreak context
       jailbreak_context =
         Regex.match?(
-          ~r/(you\s+are|pretend|act\s+as|operating\s+as|now\s+)(now\s+)?#{Regex.escape(persona_lower)}/i,
+          ~r/(you\s+are|pretend|act\s+as|operating\s+as|now\s+)(now\s+)?\s*#{Regex.escape(persona_lower)}/i,
           input
         )
 
@@ -262,8 +269,10 @@ defmodule LlmGuard.Detectors.Jailbreak do
           # High confidence - explicit jailbreak phrase or rules context
           [{:persona, persona, 0.9}]
 
-        Regex.match?(word_boundary_pattern, normalized) and String.length(persona) > 4 ->
+        Regex.match?(word_boundary_pattern, normalized) and String.length(persona) > 4 and
+            not is_discussion_context ->
           # Medium confidence - standalone word, persona name must be > 4 chars to reduce FP
+          # Don't flag if this appears to be a discussion about jailbreaks
           [{:persona, persona, 0.7}]
 
         true ->

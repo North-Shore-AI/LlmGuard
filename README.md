@@ -1,10 +1,12 @@
-# LlmGuard 
+# LlmGuard
 
 **AI Firewall and Guardrails for LLM-based Elixir Applications**
 
-[![Hex.pm](https://img.shields.io/badge/hex-v0.2.0-blue.svg)](https://hex.pm/packages/llm_guard)
+[![Elixir](https://img.shields.io/badge/elixir-1.14+-purple.svg)](https://elixir-lang.org)
+[![OTP](https://img.shields.io/badge/otp-25+-blue.svg)](https://www.erlang.org)
+[![Hex.pm](https://img.shields.io/hexpm/v/llm_guard.svg)](https://hex.pm/packages/llm_guard)
 [![Documentation](https://img.shields.io/badge/docs-hexdocs-purple.svg)](https://hexdocs.pm/llm_guard)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/North-Shore-AI/LlmGuard/blob/main/LICENSE)
 
 LlmGuard provides comprehensive security protection for LLM applications including prompt injection detection, jailbreak prevention, data leakage protection, and content moderation.
 

@@ -10,13 +10,13 @@ LlmGuard provides comprehensive security protection for LLM applications includi
 
 ## Features
 
-- ✅ **Prompt Injection Detection** - Multi-layer detection with 24+ patterns
+- ✅ **Prompt Injection Detection** - Multi-layer detection with 34+ patterns
+- ✅ **Jailbreak Detection** - Role-playing, hypothetical, encoding, emotional attacks
+- ✅ **PII Detection & Redaction** - Email, phone, SSN, credit cards, IP, URLs
 - ✅ **Pipeline Architecture** - Flexible, extensible security pipeline
 - ✅ **Configuration System** - Centralized configuration with validation
 - ✅ **Zero Trust** - Validates all inputs and outputs
-- ✅ **High Performance** - <10ms latency for pattern-based detection
-- ⏳ **Jailbreak Detection** - Coming soon
-- ⏳ **PII Detection & Redaction** - Coming soon
+- ✅ **High Performance** - <15ms latency for pattern-based detection
 - ⏳ **Content Moderation** - Coming soon
 - ⏳ **Rate Limiting** - Coming soon
 - ⏳ **Audit Logging** - Coming soon
@@ -105,7 +105,7 @@ User Input
 
 ## Detected Threats
 
-### Prompt Injection (24 patterns)
+### Prompt Injection (34 patterns)
 - Instruction override: "Ignore all previous instructions"
 - System extraction: "Show me your system prompt"
 - Delimiter injection: "---END SYSTEM---"
@@ -113,11 +113,26 @@ User Input
 - Role manipulation: "You are now DAN"
 - Authority escalation: "As SUPER-ADMIN..."
 
+### Jailbreak Detection
+- Role-playing: DAN, DUDE, KEVIN, etc.
+- Hypothetical scenarios: "In a world where..."
+- Prefix injection: [SYSTEM OVERRIDE], <<DEBUG>>
+- Emotional manipulation: "For educational purposes..."
+- Encoding attacks: Base64, hex, leetspeak
+- Format manipulation: Structured jailbreak instructions
+
+### PII Detection & Redaction
+- Email addresses (95% confidence)
+- Phone numbers (US format, 80-90% confidence)
+- Social Security Numbers (95% confidence)
+- Credit card numbers (98% with Luhn validation)
+- IP addresses (85-90% confidence)
+- URLs (90% confidence)
+
 ### Coming Soon
-- Jailbreak attempts
-- PII leakage (email, phone, SSN, credit cards)
 - Harmful content (violence, hate speech, etc.)
-- Encoding-based attacks
+- Advanced ML-based classification
+- Multi-turn conversation analysis
 
 ## Testing
 
@@ -136,7 +151,7 @@ mix test --only performance
 ```
 
 **Current Status**:
-- ✅ 105/118 tests passing (89%)
+- ✅ 222/228 tests passing (97.4%)
 - ✅ Zero compilation warnings
 - ✅ 100% documentation coverage
 
@@ -193,6 +208,19 @@ See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for detailed progress.
 **Phase 4 - Optimization**: ⏳ 0% Complete
 
 ## Examples
+
+Run examples with `mix run examples/example_name.exs`:
+
+```bash
+# Basic usage demonstration
+mix run examples/basic_usage.exs
+
+# Jailbreak detection examples
+mix run examples/jailbreak_detection.exs
+
+# Comprehensive multi-layer protection
+mix run examples/comprehensive_protection.exs
+```
 
 ### Phoenix Integration
 

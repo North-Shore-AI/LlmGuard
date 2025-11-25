@@ -24,3 +24,5 @@ llm_guard-*/
 
 # Temporary files, for example, from tests.
 /tmp/
+
+repomix*.xml

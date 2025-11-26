@@ -1,7 +1,7 @@
 defmodule LlmGuard.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.2.1"
   @source_url "https://github.com/North-Shore-AI/LlmGuard"
 
   def project do
@@ -21,6 +21,7 @@ defmodule LlmGuard.MixProject do
       # Testing
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
+        dialyzer: :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -60,7 +61,8 @@ defmodule LlmGuard.MixProject do
       {:benchee, "~> 1.1", only: :dev},
 
       # Telemetry
-      {:telemetry, "~> 1.2"}
+      {:telemetry, "~> 1.2"},
+      {:telemetry_metrics, "~> 0.6"}
     ]
   end
 

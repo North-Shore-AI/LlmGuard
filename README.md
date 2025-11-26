@@ -30,7 +30,7 @@ Add to your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:llm_guard, "~> 0.2.0"}
+    {:llm_guard, "~> 0.2.1"}
   ]
 end
 ```
@@ -178,7 +178,64 @@ config = LlmGuard.Config.new(
     tokens_per_minute: 200_000
   }
 )
+
+# Optional: Caching (set `caching` to enable pipeline result caching)
+caching_config = %{
+  enabled: true,
+  pattern_cache: true,
+  result_cache: true,
+  result_ttl_seconds: 300,
+  max_cache_entries: 10_000
+}
+
+config = LlmGuard.Config.new(
+  prompt_injection_detection: true,
+  caching: caching_config
+)
 ```
+
+### Caching
+
+The pipeline will reuse detector results when `caching.enabled` is true **and** the cache process is
+running.
+
+```elixir
+# Start the cache in your supervision tree
+children = [
+  {LlmGuard.Cache.PatternCache, []},
+  # ...other children
+]
+
+# Fetch cache statistics
+stats = LlmGuard.Cache.PatternCache.stats()
+# => %{pattern_count: 10, result_count: 42, hit_rate: 0.78, ...}
+```
+
+### Telemetry & Metrics
+
+Telemetry emits pipeline, detector, and cache events with native durations.
+
+```elixir
+# Initialize handlers once (idempotent)
+:ok = LlmGuard.Telemetry.Metrics.setup()
+
+# Inspect metrics in-process
+metrics = LlmGuard.Telemetry.Metrics.snapshot()
+
+# Prometheus text format
+prom_text = LlmGuard.Telemetry.Metrics.prometheus_metrics()
+```
+
+Integrate with `Telemetry.Metrics` reporters:
+
+```elixir
+import Telemetry.Metrics
+
+metrics = LlmGuard.Telemetry.Metrics.metrics()
+```
+
+Use these metrics with Prometheus (e.g., `TelemetryMetricsPrometheus`) or LiveDashboard to track
+request outcomes, detector latency, cache hit rates, and confidence distributions.
 
 ## Performance
 
@@ -309,6 +366,6 @@ Built following security best practices and threat models from:
 ---
 
 **Status**: Alpha - Production-ready for prompt injection detection
-**Version**: 0.2.0
+**Version**: 0.2.1
 **Elixir**: ~> 1.14
 **OTP**: 25+

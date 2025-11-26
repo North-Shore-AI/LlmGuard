@@ -64,10 +64,17 @@ defmodule LlmGuard do
   alias LlmGuard.{Config, Pipeline}
   alias LlmGuard.Detectors.{PromptInjection, DataLeakage}
 
-  @type validation_result ::
+  @type input_validation_result ::
           {:ok, String.t()}
           | {:error, :detected, map()}
           | {:error, :input_too_long, map()}
+          | {:error, :pipeline_error, map()}
+
+  @type output_validation_result ::
+          {:ok, String.t()}
+          | {:error, :detected, map()}
+          | {:error, :output_too_long,
+             %{:max_length => pos_integer(), :actual_length => non_neg_integer()}}
           | {:error, :pipeline_error, map()}
 
   @doc """
@@ -103,7 +110,7 @@ defmodule LlmGuard do
       iex> details.reason
       :instruction_override
   """
-  @spec validate_input(String.t(), Config.t() | map()) :: validation_result()
+  @spec validate_input(String.t(), Config.t() | map()) :: input_validation_result()
   def validate_input(input, config \\ %Config{})
 
   def validate_input(input, %Config{} = config) when is_binary(input) do
@@ -116,7 +123,8 @@ defmodule LlmGuard do
         # Step 3: Run security pipeline
         pipeline_config = %{
           early_termination: true,
-          confidence_threshold: config.confidence_threshold
+          confidence_threshold: config.confidence_threshold,
+          caching: Config.caching_config(config)
         }
 
         case Pipeline.run(sanitized, detectors, pipeline_config) do
@@ -170,7 +178,7 @@ defmodule LlmGuard do
       iex> is_binary(output)
       true
   """
-  @spec validate_output(String.t(), Config.t() | map()) :: validation_result()
+  @spec validate_output(String.t(), Config.t() | map()) :: output_validation_result()
   def validate_output(output, config \\ %Config{})
 
   def validate_output(output, %Config{} = config) when is_binary(output) do
@@ -185,35 +193,36 @@ defmodule LlmGuard do
        }}
     else
       # Step 2: Run output detectors (PII, content moderation, etc.)
-      detectors = get_output_detectors(config)
+      case get_output_detectors(config) do
+        [] ->
+          {:ok, output}
 
-      if Enum.empty?(detectors) do
-        {:ok, output}
-      else
-        pipeline_config = %{
-          early_termination: true,
-          confidence_threshold: config.confidence_threshold
-        }
+        detectors ->
+          pipeline_config = %{
+            early_termination: true,
+            confidence_threshold: config.confidence_threshold,
+            caching: Config.caching_config(config)
+          }
 
-        case Pipeline.run(output, detectors, pipeline_config) do
-          {:ok, _result} ->
-            {:ok, output}
+          case Pipeline.run(output, detectors, pipeline_config) do
+            {:ok, _result} ->
+              {:ok, output}
 
-          {:error, :detected, result} ->
-            {:error, :detected,
-             %{
-               reason: get_primary_threat(result),
-               confidence: get_max_confidence(result),
-               details: result
-             }}
+            {:error, :detected, result} ->
+              {:error, :detected,
+               %{
+                 reason: get_primary_threat(result),
+                 confidence: get_max_confidence(result),
+                 details: result
+               }}
 
-          {:error, :pipeline_error, result} ->
-            {:error, :pipeline_error,
-             %{
-               reason: :pipeline_error,
-               details: result
-             }}
-        end
+            {:error, :pipeline_error, result} ->
+              {:error, :pipeline_error,
+               %{
+                 reason: :pipeline_error,
+                 details: result
+               }}
+          end
       end
     end
   end
@@ -244,7 +253,7 @@ defmodule LlmGuard do
       results = LlmGuard.validate_batch(inputs, config)
       # => [{:ok, "Input 1"}, {:ok, "Input 2"}, {:error, :detected, ...}]
   """
-  @spec validate_batch([String.t()], Config.t() | map()) :: [validation_result()]
+  @spec validate_batch([String.t()], Config.t() | map()) :: [input_validation_result()]
   def validate_batch(inputs, config \\ %Config{}) when is_list(inputs) do
     config =
       if is_map(config) and not is_struct(config), do: Config.from_map(config), else: config

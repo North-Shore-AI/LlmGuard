@@ -44,6 +44,7 @@ defmodule LlmGuard.Pipeline do
 
   require Logger
 
+  alias LlmGuard.Cache.PatternCache
   alias LlmGuard.Config
 
   @type detector :: module()
@@ -60,7 +61,7 @@ defmodule LlmGuard.Pipeline do
   @type detector_result :: %{
           detector: String.t(),
           result: :safe | :detected | :error,
-          duration_ms: float(),
+          duration_ms: non_neg_integer(),
           details: map()
         }
 
@@ -69,7 +70,7 @@ defmodule LlmGuard.Pipeline do
           safe?: boolean(),
           detections: [detection()],
           detector_results: [detector_result()],
-          total_duration_ms: float(),
+          total_duration_ms: non_neg_integer(),
           error: map() | nil
         }
 
@@ -97,28 +98,30 @@ defmodule LlmGuard.Pipeline do
   """
   @spec run(String.t(), [detector()], pipeline_config()) :: run_result()
   def run(input, detectors, config \\ %{}) do
-    start_time = System.monotonic_time(:millisecond)
+    start_time = System.monotonic_time()
 
     try do
       detector_results = execute_detectors(input, detectors, config)
 
-      total_duration = System.monotonic_time(:millisecond) - start_time
+      total_duration_native = System.monotonic_time() - start_time
+      total_duration_ms = System.convert_time_unit(total_duration_native, :native, :millisecond)
 
-      result = build_result(input, detector_results, total_duration, config)
+      result = build_result(input, detector_results, total_duration_ms, config)
 
-      emit_telemetry(result, detectors, config)
+      emit_telemetry(result, detectors, config, total_duration_native)
 
       categorize_result(result)
     rescue
       error ->
-        total_duration = System.monotonic_time(:millisecond) - start_time
+        total_duration_native = System.monotonic_time() - start_time
+        total_duration_ms = System.convert_time_unit(total_duration_native, :native, :millisecond)
 
         error_result = %{
           input: input,
           safe?: false,
           detections: [],
           detector_results: [],
-          total_duration_ms: total_duration,
+          total_duration_ms: total_duration_ms,
           error: %{
             detector: "pipeline",
             reason: Exception.message(error),
@@ -127,6 +130,8 @@ defmodule LlmGuard.Pipeline do
         }
 
         Logger.error("Pipeline error: #{Exception.message(error)}")
+
+        emit_telemetry(error_result, detectors, config, total_duration_native)
 
         {:error, :pipeline_error, error_result}
     end
@@ -200,9 +205,10 @@ defmodule LlmGuard.Pipeline do
     early_termination = Map.get(config, :early_termination, true)
     continue_on_error = Map.get(config, :continue_on_error, false)
     confidence_threshold = Map.get(config, :confidence_threshold, 0.7)
+    caching = Map.get(config, :caching)
 
     Enum.reduce_while(detectors, [], fn detector, acc ->
-      result = execute_detector(detector, input, config)
+      result = execute_detector(detector, input, config, caching)
 
       case result.result do
         :detected ->
@@ -232,44 +238,75 @@ defmodule LlmGuard.Pipeline do
     |> Enum.reverse()
   end
 
-  defp execute_detector(detector, input, _config) do
-    start_time = System.monotonic_time(:millisecond)
+  defp execute_detector(detector, input, _config, caching) do
+    use_cache? = cache_enabled?(caching)
+    use_result_cache? = use_cache? and Map.get(caching, :result_cache, true)
+    cache_available? = use_result_cache? and Process.whereis(PatternCache) != nil
+    cache_ttl = Map.get(caching || %{}, :result_ttl_seconds)
 
-    try do
-      case detector.detect(input, []) do
-        {:safe, details} ->
-          duration = System.monotonic_time(:millisecond) - start_time
+    input_hash = if cache_available?, do: PatternCache.hash_input(input), else: nil
 
-          %{
-            detector: detector.name(),
-            result: :safe,
-            duration_ms: duration,
-            details: details
-          }
+    with true <- cache_available?,
+         {:ok, cached_result} <- PatternCache.get_result(input_hash, detector.name()) do
+      emit_cache_telemetry(:result, true)
+      emit_detector_telemetry(cached_result)
+      cached_result
+    else
+      _ ->
+        emit_cache_telemetry(:result, false, cache_available?)
+        start_time = System.monotonic_time()
 
-        {:detected, details} ->
-          duration = System.monotonic_time(:millisecond) - start_time
+        result =
+          try do
+            case detector.detect(input, []) do
+              {:safe, details} ->
+                duration_native = System.monotonic_time() - start_time
+                duration_ms = System.convert_time_unit(duration_native, :native, :millisecond)
 
-          %{
-            detector: detector.name(),
-            result: :detected,
-            duration_ms: duration,
-            details: details
-          }
-      end
-    rescue
-      error ->
-        duration = System.monotonic_time(:millisecond) - start_time
+                %{
+                  detector: detector.name(),
+                  result: :safe,
+                  duration_ms: duration_ms,
+                  details: details,
+                  duration_native: duration_native
+                }
 
-        %{
-          detector: detector.name(),
-          result: :error,
-          duration_ms: duration,
-          details: %{
-            error: Exception.message(error),
-            stacktrace: __STACKTRACE__
-          }
-        }
+              {:detected, details} ->
+                duration_native = System.monotonic_time() - start_time
+                duration_ms = System.convert_time_unit(duration_native, :native, :millisecond)
+
+                %{
+                  detector: detector.name(),
+                  result: :detected,
+                  duration_ms: duration_ms,
+                  details: details,
+                  duration_native: duration_native
+                }
+            end
+          rescue
+            error ->
+              duration_native = System.monotonic_time() - start_time
+              duration_ms = System.convert_time_unit(duration_native, :native, :millisecond)
+
+              %{
+                detector: detector.name(),
+                result: :error,
+                duration_ms: duration_ms,
+                details: %{
+                  error: Exception.message(error),
+                  stacktrace: __STACKTRACE__
+                },
+                duration_native: duration_native
+              }
+          end
+
+        emit_detector_telemetry(result)
+
+        if cache_available? do
+          PatternCache.put_result(input_hash, detector.name(), result, cache_ttl)
+        end
+
+        result
     end
   end
 
@@ -326,20 +363,54 @@ defmodule LlmGuard.Pipeline do
 
   defp categorize_result(%{safe?: false} = result), do: {:error, :detected, result}
 
-  defp emit_telemetry(result, detectors, _config) do
+  defp emit_telemetry(result, detectors, _config, duration_native) do
     :telemetry.execute(
       [:llm_guard, :pipeline, :complete],
       %{
-        duration: result.total_duration_ms,
+        duration: duration_native,
         detections: length(result.detections),
         detectors: length(detectors)
       },
       %{
         safe: result.safe?,
-        detector_count: length(detectors)
+        detector_count: length(detectors),
+        error: not is_nil(result.error)
       }
     )
   end
+
+  defp emit_detector_telemetry(%{detector: detector, duration_native: duration_native} = result) do
+    :telemetry.execute(
+      [:llm_guard, :detector, :complete],
+      %{duration: duration_native},
+      %{
+        detector: detector,
+        detected: result.result == :detected,
+        category: result.details[:category],
+        confidence: result.details[:confidence]
+      }
+    )
+  end
+
+  defp emit_detector_telemetry(_), do: :ok
+
+  defp emit_cache_telemetry(cache_type, hit, available \\ true)
+  defp emit_cache_telemetry(_cache_type, _hit, false), do: :ok
+
+  defp emit_cache_telemetry(cache_type, hit, true) do
+    :telemetry.execute(
+      [:llm_guard, :cache, :access],
+      %{},
+      %{
+        cache_type: cache_type,
+        hit: hit
+      }
+    )
+  end
+
+  defp cache_enabled?(nil), do: false
+  defp cache_enabled?(caching) when is_map(caching), do: Map.get(caching, :enabled, false)
+  defp cache_enabled?(_), do: false
 
   defp get_max_length(%Config{max_input_length: max}), do: max
   defp get_max_length(%{max_input_length: max}), do: max

@@ -34,6 +34,14 @@ defmodule LlmGuard.Config do
     - `:backend` - Backend to use (`:ets`, `:database`, `:external`)
     - `:log_safe_inputs` - Whether to log inputs that pass validation (default: `false`)
 
+  ### Caching
+  - `:caching` - Map with caching configuration:
+    - `:enabled` - Enable pattern and result caching (default: `false`)
+    - `:pattern_cache` - Enable compiled pattern caching (default: `true`)
+    - `:result_cache` - Enable detection result caching (default: `true`)
+    - `:result_ttl_seconds` - TTL for cached results (default: `300`)
+    - `:max_cache_entries` - Maximum cached results (default: `10_000`)
+
   ## Examples
 
       # Create default configuration
@@ -71,6 +79,7 @@ defmodule LlmGuard.Config do
           enabled_detectors: [atom()],
           rate_limiting: map() | nil,
           audit_logging: map() | nil,
+          caching: map() | nil,
           custom_options: map()
         }
 
@@ -85,6 +94,7 @@ defmodule LlmGuard.Config do
             enabled_detectors: [],
             rate_limiting: nil,
             audit_logging: nil,
+            caching: nil,
             custom_options: %{}
 
   @doc """
@@ -242,6 +252,47 @@ defmodule LlmGuard.Config do
     case audit_logging do
       nil -> nil
       config when is_map(config) -> atomize_keys(config)
+    end
+  end
+
+  @doc """
+  Returns the caching configuration if configured.
+
+  ## Parameters
+
+  - `config` - Configuration struct
+
+  ## Returns
+
+  Caching configuration map or `nil` if not configured.
+  """
+  @spec caching_config(t()) :: map() | nil
+  def caching_config(%__MODULE__{caching: caching}) do
+    case caching do
+      nil -> nil
+      config when is_map(config) -> atomize_keys(config)
+    end
+  end
+
+  @doc """
+  Checks if caching is enabled.
+
+  ## Parameters
+
+  - `config` - Configuration struct
+
+  ## Returns
+
+  `true` if caching is enabled, `false` otherwise.
+  """
+  @spec caching_enabled?(t()) :: boolean()
+  def caching_enabled?(%__MODULE__{caching: caching}) do
+    case caching do
+      nil ->
+        false
+
+      config when is_map(config) ->
+        Map.get(config, :enabled, false) || Map.get(config, "enabled", false)
     end
   end
 

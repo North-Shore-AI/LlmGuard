@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-11-26
+
+### Added
+- **CrucibleIR Integration** - Pipeline stage for research framework integration
+  - `LlmGuard.Stage` - Pipeline stage implementing CrucibleIR stage protocol
+  - Accepts `CrucibleIR.Reliability.Guardrail` configuration from experiment context
+  - Validates inputs/outputs with configurable detection and redaction
+  - Returns structured results with status, detections, and errors
+  - Supports `fail_on_detection` mode for strict validation pipelines
+  - Full context preservation for pipeline integration
+
+- **Guardrail Configuration Mapping**
+  - `Stage.from_ir_config/1` - Converts CrucibleIR guardrail config to LlmGuard config
+  - Maps prompt injection, jailbreak, PII, and content moderation settings
+  - Automatic data leakage prevention when PII detection or redaction enabled
+  - Preserves all LlmGuard detection capabilities
+
+- **Stage Introspection**
+  - `Stage.describe/1` - Returns stage description and capabilities
+  - Enables pipeline discovery and documentation
+  - Lists all supported detection types
+
+### Dependencies
+- Added `crucible_ir ~> 0.1.1` for research framework integration
+
+### Testing
+- **Stage Tests**: 30+ comprehensive test cases
+  - Guardrail config conversion
+  - Single and batch input/output validation
+  - Error handling and edge cases
+  - Detection type combinations
+  - fail_on_detection behavior
+  - Result structure validation
+
+### Documentation
+- Complete module documentation with usage examples
+- Stage integration guide in README
+- Pipeline context requirements
+- Result structure specification
+
+### Use Cases
+```elixir
+# Research pipeline integration
+guardrail = %CrucibleIR.Reliability.Guardrail{
+  prompt_injection_detection: true,
+  jailbreak_detection: true,
+  pii_detection: true,
+  fail_on_detection: true
+}
+
+context = %{
+  experiment: %{reliability: %{guardrails: guardrail}},
+  inputs: "User input to validate"
+}
+
+{:ok, result} = LlmGuard.Stage.run(context)
+# => %{guardrails: %{status: :safe, validated_inputs: [...], ...}}
+```
+
+### Compatibility
+- Fully backward compatible with v0.2.x
+- No breaking changes to existing APIs
+- Stage module is additive functionality
+- All existing tests continue to pass
+
 ## [0.2.1] - 2025-11-25
 
 ### Added

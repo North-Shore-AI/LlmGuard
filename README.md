@@ -30,7 +30,7 @@ Add to your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:llm_guard, "~> 0.2.1"}
+    {:llm_guard, "~> 0.3.0"}
   ]
 end
 ```
@@ -281,6 +281,58 @@ mix run examples/jailbreak_detection.exs
 mix run examples/comprehensive_protection.exs
 ```
 
+### CrucibleIR Pipeline Integration
+
+```elixir
+# Use LlmGuard as a stage in CrucibleIR research pipelines
+defmodule MyExperiment do
+  def run_with_guardrails do
+    # Configure guardrails
+    guardrail = %CrucibleIR.Reliability.Guardrail{
+      profiles: [:default],
+      prompt_injection_detection: true,
+      jailbreak_detection: true,
+      pii_detection: true,
+      pii_redaction: false,
+      fail_on_detection: true
+    }
+
+    # Create experiment context
+    context = %{
+      experiment: %{
+        reliability: %{
+          guardrails: guardrail
+        }
+      },
+      inputs: "User prompt to validate"
+    }
+
+    # Run the stage
+    case LlmGuard.Stage.run(context) do
+      {:ok, updated_context} ->
+        # Check validation results
+        case updated_context.guardrails.status do
+          :safe ->
+            IO.puts("Input validated successfully")
+            process_safe_input(updated_context.guardrails.validated_inputs)
+
+          :detected ->
+            IO.puts("Threats detected: #{inspect(updated_context.guardrails.detections)}")
+            handle_detected_threats(updated_context.guardrails)
+
+          :error ->
+            IO.puts("Validation errors: #{inspect(updated_context.guardrails.errors)}")
+        end
+
+      {:error, {:threats_detected, details}} ->
+        # Strict mode: fail_on_detection was true
+        IO.puts("Pipeline halted due to detected threats")
+        {:error, details}
+    end
+  end
+end
+```
+
 ### Phoenix Integration
 
 ```elixir
@@ -340,11 +392,12 @@ Areas needing help:
 
 ## Roadmap
 
-- **v0.2.0** - PII detection & redaction
-- **v0.3.0** - Jailbreak detection
-- **v0.4.0** - Content moderation
-- **v0.5.0** - Rate limiting & audit logging
-- **v0.6.0** - Heuristic analysis (Layer 2)
+- **v0.2.0** - PII detection & redaction ✅
+- **v0.3.0** - CrucibleIR integration & Stage implementation ✅
+- **v0.4.0** - Jailbreak detection
+- **v0.5.0** - Content moderation
+- **v0.6.0** - Rate limiting & audit logging
+- **v0.7.0** - Heuristic analysis (Layer 2)
 - **v1.0.0** - ML classification (Layer 3)
 
 ## Security
@@ -366,6 +419,6 @@ Built following security best practices and threat models from:
 ---
 
 **Status**: Alpha - Production-ready for prompt injection detection
-**Version**: 0.2.1
+**Version**: 0.3.0
 **Elixir**: ~> 1.14
 **OTP**: 25+

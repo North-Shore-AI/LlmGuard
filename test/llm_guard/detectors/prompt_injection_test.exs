@@ -15,6 +15,7 @@ defmodule LlmGuard.Detectors.PromptInjectionTest do
 
   describe "detector interface" do
     test "implements detector behaviour" do
+      Code.ensure_loaded!(PromptInjection)
       assert function_exported?(PromptInjection, :detect, 2)
       assert function_exported?(PromptInjection, :name, 0)
       assert function_exported?(PromptInjection, :description, 0)

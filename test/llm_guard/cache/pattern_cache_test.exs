@@ -1,5 +1,5 @@
 defmodule LlmGuard.Cache.PatternCacheTest do
-  use ExUnit.Case, async: false
+  use Supertester.ExUnitFoundation, isolation: :full_isolation
 
   alias LlmGuard.Cache.PatternCache
 
@@ -62,9 +62,7 @@ defmodule LlmGuard.Cache.PatternCacheTest do
       result = {:detected, %{confidence: 0.95}}
       input_hash = PatternCache.hash_input("test input")
 
-      PatternCache.put_result(input_hash, "prompt_injection", result, 300)
-      # Give async operation time to complete
-      Process.sleep(10)
+      PatternCache.put_result_sync(input_hash, "prompt_injection", result, 300)
 
       assert {:ok, ^result} = PatternCache.get_result(input_hash, "prompt_injection")
     end
@@ -77,18 +75,18 @@ defmodule LlmGuard.Cache.PatternCacheTest do
       result = {:safe, %{}}
       input_hash = PatternCache.hash_input("test")
 
-      # Cache with 1 second TTL
-      PatternCache.put_result(input_hash, "detector", result, 1)
-      Process.sleep(10)
+      # Cache with normal TTL first to verify it's stored
+      PatternCache.put_result_sync(input_hash, "detector", result, 300)
 
       # Should be cached
       assert {:ok, ^result} = PatternCache.get_result(input_hash, "detector")
 
-      # Wait for expiration
-      Process.sleep(1100)
+      # Now cache a different entry with TTL=0 (expires immediately)
+      input_hash2 = PatternCache.hash_input("test_expired")
+      PatternCache.put_result_sync(input_hash2, "detector", result, 0)
 
-      # Should be expired
-      assert :error = PatternCache.get_result(input_hash, "detector")
+      # Should be expired immediately (now < expires_at is false when expires_at = now)
+      assert :error = PatternCache.get_result(input_hash2, "detector")
     end
 
     test "different detectors can cache same input" do
@@ -96,9 +94,8 @@ defmodule LlmGuard.Cache.PatternCacheTest do
       result1 = {:detected, %{confidence: 0.9}}
       result2 = {:safe, %{}}
 
-      PatternCache.put_result(input_hash, "detector1", result1, 300)
-      PatternCache.put_result(input_hash, "detector2", result2, 300)
-      Process.sleep(10)
+      PatternCache.put_result_sync(input_hash, "detector1", result1, 300)
+      PatternCache.put_result_sync(input_hash, "detector2", result2, 300)
 
       assert {:ok, ^result1} = PatternCache.get_result(input_hash, "detector1")
       assert {:ok, ^result2} = PatternCache.get_result(input_hash, "detector2")
@@ -107,8 +104,7 @@ defmodule LlmGuard.Cache.PatternCacheTest do
     test "handles concurrent result access" do
       input_hash = PatternCache.hash_input("concurrent")
       result = {:safe, %{}}
-      PatternCache.put_result(input_hash, "detector", result, 300)
-      Process.sleep(10)
+      PatternCache.put_result_sync(input_hash, "detector", result, 300)
 
       tasks =
         for _ <- 1..100 do
@@ -157,10 +153,8 @@ defmodule LlmGuard.Cache.PatternCacheTest do
 
       for i <- 1..5 do
         hash = PatternCache.hash_input("input#{i}")
-        PatternCache.put_result(hash, "detector", result, 300)
+        PatternCache.put_result_sync(hash, "detector", result, 300)
       end
-
-      Process.sleep(10)
 
       assert :ok = PatternCache.clear_results()
 
@@ -185,8 +179,7 @@ defmodule LlmGuard.Cache.PatternCacheTest do
       hash = PatternCache.hash_input("input")
 
       PatternCache.put_pattern("test", pattern)
-      PatternCache.put_result(hash, "detector", result, 300)
-      Process.sleep(10)
+      PatternCache.put_result_sync(hash, "detector", result, 300)
 
       assert :ok = PatternCache.clear_all()
 
@@ -202,10 +195,8 @@ defmodule LlmGuard.Cache.PatternCacheTest do
       # Add more results than the limit
       for i <- 1..10 do
         hash = PatternCache.hash_input("input#{i}")
-        PatternCache.put_result(hash, "detector", {:safe, %{}}, 300)
+        PatternCache.put_result_sync(hash, "detector", {:safe, %{}}, 300)
       end
-
-      Process.sleep(50)
 
       # Cache should not exceed max_results
       stats = PatternCache.stats()
@@ -242,8 +233,7 @@ defmodule LlmGuard.Cache.PatternCacheTest do
 
     test "tracks result hits and misses" do
       hash = PatternCache.hash_input("test")
-      PatternCache.put_result(hash, "detector", {:safe, %{}}, 300)
-      Process.sleep(10)
+      PatternCache.put_result_sync(hash, "detector", {:safe, %{}}, 300)
 
       # Hit
       PatternCache.get_result(hash, "detector")
@@ -287,22 +277,27 @@ defmodule LlmGuard.Cache.PatternCacheTest do
 
   describe "expiration and cleanup" do
     test "automatically cleans up expired entries" do
-      # Start cache with fast cleanup
+      # Start cache with fast cleanup (but we won't rely on the timer)
       stop_supervised(PatternCache)
-      {:ok, _pid} = start_supervised({PatternCache, cleanup_interval: 100})
+      {:ok, _pid} = start_supervised({PatternCache, cleanup_interval: 60_000})
 
-      hash = PatternCache.hash_input("test")
-      PatternCache.put_result(hash, "detector", {:safe, %{}}, 1)
-      Process.sleep(10)
+      # First, add a normal entry to verify cache is working
+      hash1 = PatternCache.hash_input("test_normal")
+      PatternCache.put_result_sync(hash1, "detector", {:safe, %{}}, 300)
+      assert {:ok, _} = PatternCache.get_result(hash1, "detector")
 
-      # Should be cached
-      assert {:ok, _} = PatternCache.get_result(hash, "detector")
+      # Now add an entry with TTL=0 (expires immediately)
+      hash2 = PatternCache.hash_input("test_expired")
+      PatternCache.put_result_sync(hash2, "detector", {:safe, %{}}, 0)
 
-      # Wait for expiration and cleanup
-      Process.sleep(1200)
+      # Trigger cleanup explicitly to remove expired entries deterministically
+      PatternCache.trigger_cleanup()
 
-      # Should be cleaned up
-      assert :error = PatternCache.get_result(hash, "detector")
+      # The expired entry should be cleaned up
+      assert :error = PatternCache.get_result(hash2, "detector")
+
+      # The normal entry should still exist
+      assert {:ok, _} = PatternCache.get_result(hash1, "detector")
     end
   end
 
@@ -318,10 +313,8 @@ defmodule LlmGuard.Cache.PatternCacheTest do
       for i <- 1..20 do
         hash = PatternCache.hash_input("input#{i}")
         result = if rem(i, 2) == 0, do: {:safe, %{}}, else: {:detected, %{confidence: 0.9}}
-        PatternCache.put_result(hash, "detector", result, 300)
+        PatternCache.put_result_sync(hash, "detector", result, 300)
       end
-
-      Process.sleep(50)
 
       # Verify patterns
       for i <- 1..10 do

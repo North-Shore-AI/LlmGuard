@@ -54,6 +54,7 @@ defmodule LlmGuard.MixProject do
       # Testing
       {:stream_data, "~> 1.0", only: [:test, :dev]},
       {:mox, "~> 1.0", only: :test},
+      {:supertester, "~> 0.3.1", only: :test},
 
       # Code quality
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

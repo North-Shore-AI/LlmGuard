@@ -8,6 +8,7 @@ defmodule LlmGuard.Detectors.DataLeakageTest do
 
   describe "detector interface" do
     test "implements detector behaviour" do
+      Code.ensure_loaded!(DataLeakage)
       assert function_exported?(DataLeakage, :detect, 2)
       assert function_exported?(DataLeakage, :name, 0)
       assert function_exported?(DataLeakage, :description, 0)

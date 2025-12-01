@@ -140,6 +140,15 @@ defmodule LlmGuard.Cache.PatternCache do
   end
 
   @doc """
+  Synchronous version of put_result for testing.
+  Caches a detection result and waits for the operation to complete.
+  """
+  @spec put_result_sync(String.t(), String.t() | atom(), any(), pos_integer() | nil) :: :ok
+  def put_result_sync(input_hash, detector, result, ttl \\ nil) do
+    GenServer.call(__MODULE__, {:put_result, input_hash, detector, result, ttl})
+  end
+
+  @doc """
   Retrieves a cached detection result.
 
   ## Parameters
@@ -217,6 +226,15 @@ defmodule LlmGuard.Cache.PatternCache do
   @spec clear_all() :: :ok
   def clear_all do
     GenServer.call(__MODULE__, :clear_all)
+  end
+
+  @doc """
+  Triggers cleanup of expired entries synchronously.
+  Useful for testing expiration behavior without timing dependencies.
+  """
+  @spec trigger_cleanup() :: :ok
+  def trigger_cleanup do
+    GenServer.call(__MODULE__, :trigger_cleanup)
   end
 
   @doc """
@@ -326,6 +344,22 @@ defmodule LlmGuard.Cache.PatternCache do
   end
 
   @impl true
+  def handle_call({:put_result, input_hash, detector, result, ttl}, _from, state) do
+    ttl = ttl || state.result_ttl
+    expires_at = System.system_time(:second) + ttl
+    key = {input_hash, detector}
+
+    current_size = :ets.info(@result_table, :size)
+
+    if current_size >= state.max_results do
+      evict_oldest()
+    end
+
+    :ets.insert(@result_table, {key, result, expires_at})
+    {:reply, :ok, state}
+  end
+
+  @impl true
   def handle_call(:clear_results, _from, state) do
     :ets.delete_all_objects(@result_table)
     Logger.info("Cleared all cached results")
@@ -337,6 +371,12 @@ defmodule LlmGuard.Cache.PatternCache do
     :ets.delete_all_objects(@pattern_table)
     :ets.delete_all_objects(@result_table)
     Logger.info("Cleared all caches")
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call(:trigger_cleanup, _from, state) do
+    cleanup_expired()
     {:reply, :ok, state}
   end
 

@@ -1,5 +1,9 @@
 # LlmGuard
 
+<p align="center">
+  <img src="assets/LlmGuard.svg" alt="LlmGuard Logo" width="200">
+</p>
+
 **AI Firewall and Guardrails for LLM-based Elixir Applications**
 
 [![Elixir](https://img.shields.io/badge/elixir-1.14+-purple.svg)](https://elixir-lang.org)
@@ -30,7 +34,7 @@ Add to your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:llm_guard, "~> 0.3.0"}
+    {:llm_guard, "~> 0.3.1"}
   ]
 end
 ```
@@ -419,6 +423,6 @@ Built following security best practices and threat models from:
 ---
 
 **Status**: Alpha - Production-ready for prompt injection detection
-**Version**: 0.3.0
+**Version**: 0.3.1
 **Elixir**: ~> 1.14
 **OTP**: 25+

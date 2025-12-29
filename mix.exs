@@ -1,7 +1,7 @@
 defmodule LlmGuard.MixProject do
   use Mix.Project
 
-  @version "0.3.0"
+  @version "0.3.1"
   @source_url "https://github.com/North-Shore-AI/LlmGuard"
 
   def project do
@@ -46,7 +46,7 @@ defmodule LlmGuard.MixProject do
   defp deps do
     [
       # CrucibleIR integration
-      {:crucible_ir, "~> 0.1.1"},
+      {:crucible_ir, "~> 0.2.1"},
 
       # Documentation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
@@ -54,7 +54,7 @@ defmodule LlmGuard.MixProject do
       # Testing
       {:stream_data, "~> 1.0", only: [:test, :dev]},
       {:mox, "~> 1.0", only: :test},
-      {:supertester, "~> 0.3.1", only: :test},
+      {:supertester, "~> 0.4.0", only: :test},
 
       # Code quality
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

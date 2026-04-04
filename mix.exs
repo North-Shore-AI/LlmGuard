@@ -49,12 +49,12 @@ defmodule LlmGuard.MixProject do
       {:crucible_ir, "~> 0.2.1"},
 
       # Documentation
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.40.0", only: :dev, runtime: false},
 
       # Testing
       {:stream_data, "~> 1.0", only: [:test, :dev]},
       {:mox, "~> 1.0", only: :test},
-      {:supertester, "~> 0.4.0", only: :test},
+      {:supertester, "~> 0.5.1", only: :test},
 
       # Code quality
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
@@ -79,7 +79,7 @@ defmodule LlmGuard.MixProject do
       name: "llm_guard",
       description: description(),
       files:
-        ~w(lib mix.exs README.md CHANGELOG.md LICENSE IMPLEMENTATION_STATUS.md docs examples),
+        ~w(lib assets mix.exs README.md CHANGELOG.md LICENSE IMPLEMENTATION_STATUS.md docs examples),
       licenses: ["MIT"],
       links: %{
         "GitHub" => @source_url,

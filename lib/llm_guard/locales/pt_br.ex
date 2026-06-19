@@ -15,7 +15,7 @@ defmodule LlmGuard.Locales.PtBr do
       # Instruction Override
       %{
         regex:
-          ~r/(ignore|ignora|desconsidere|esque[çc]a|esque[çc]e)\s+(todas\s+as\s+|as\s+)?(instru[çc][õo]es|regras|ordens|comandos|diretrizes)\s+(anteriores|acima|pr[ée]vias)/iu,
+          ~r/(ignore|ignora|desconsidere|esque[çc]a|esque[çc]e)\s+(todas\s+as\s+|as\s+|suas?\s+|seus?\s+|minhas?\s+|meus?\s+)?(instru[çc][õo]es|regras|ordens|comandos|diretrizes)\s+(anteriores|acima|pr[ée]vias)/iu,
         name: "ignore_previous_instructions_pt",
         severity: :high,
         category: :instruction_override,
@@ -23,7 +23,7 @@ defmodule LlmGuard.Locales.PtBr do
       },
       %{
         regex:
-          ~r/(ignore|ignora|desconsidere|esque[çc]a)\s+(todas\s+as\s+|as\s+)?(instru[çc][õo]es|regras|filtros|seguran[çc]a)/iu,
+          ~r/(ignore|ignora|desconsidere|esque[çc]a|esque[çc]e)\s+(todas\s+as\s+|as\s+|suas?\s+|seus?\s+)?(instru[çc][õo]es|regras|filtros|seguran[çc]a)/iu,
         name: "ignore_instructions_pt",
         severity: :medium,
         category: :instruction_override,
@@ -56,7 +56,7 @@ defmodule LlmGuard.Locales.PtBr do
       # System Extraction
       %{
         regex:
-          ~r/(mostre|revele|exiba|imprima|me\s+diga|qual\s+[ée])\s+.{0,30}(seu\s+|o\s+)?(prompt|instru[çc][õo]es|regras)\s+(do\s+sistema|inicial|original|de\s+sistema)/iu,
+          ~r/(mostre|revele|exiba|imprima|me\s+diga|qual\s+[ée])\s+.{0,30}((seu\s+|sua\s+|o\s+|a\s+)?(prompt|instru[çc][õo]es|regras)\s+(do\s+sistema|inicial|original|de\s+sistema)|(seu\s+|sua\s+|o\s+|a\s+)?system\s+prompt)/iu,
         name: "show_system_prompt_pt",
         severity: :high,
         category: :system_extraction,

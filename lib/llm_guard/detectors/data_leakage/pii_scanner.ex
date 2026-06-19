@@ -28,6 +28,8 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
       :email
   """
 
+  alias LlmGuard.Locales
+
   @type pii_type ::
           :email
           | :phone
@@ -35,6 +37,10 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
           | :credit_card
           | :ip_address
           | :url
+          | :cpf
+          | :cnpj
+          | :cep
+          | :br_phone
 
   @type pii_entity :: %{
           type: pii_type(),
@@ -98,15 +104,29 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
       [%{type: :email, value: "test@example.com", confidence: 0.95, ...}]
   """
   @spec scan(String.t()) :: [pii_entity()]
-  def scan(text) when is_binary(text) do
-    []
-    |> scan_emails(text)
-    |> scan_phones(text)
-    |> scan_ssn(text)
-    |> scan_credit_cards(text)
-    |> scan_ip_addresses(text)
-    |> scan_urls(text)
-    |> Enum.sort_by(& &1.start_pos)
+  @spec scan(String.t(), [atom()]) :: [pii_entity()]
+  def scan(text, languages \\ [:en]) when is_binary(text) do
+    base =
+      []
+      |> scan_emails(text)
+      |> scan_phones(text)
+      |> scan_ssn(text)
+      |> scan_credit_cards(text)
+      |> scan_ip_addresses(text)
+      |> scan_urls(text)
+
+    entities =
+      case Locales.pii_specs(languages) do
+        [] ->
+          base
+
+        specs ->
+          # Drop base matches (e.g. US-phone regex) that overlap a confirmed region entity.
+          region = deduplicate_overlapping(Enum.flat_map(specs, &scan_spec(&1, text)))
+          Enum.reject(base, fn e -> Enum.any?(region, &overlapping?(e, &1)) end) ++ region
+      end
+
+    Enum.sort_by(entities, & &1.start_pos)
   end
 
   @doc """
@@ -128,7 +148,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
       :credit_card -> scan_credit_cards([], text)
       :ip_address -> scan_ip_addresses([], text)
       :url -> scan_urls([], text)
-      _ -> []
+      other -> scan_region_type(text, other)
     end
   end
 
@@ -157,7 +177,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
 
     new_entities =
       Enum.map(matches, fn [{start, length}] ->
-        value = String.slice(text, start, length)
+        value = binary_part(text, start, length)
 
         %{
           type: :email,
@@ -179,7 +199,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
         Enum.map(matches, fn match_list ->
           # Take the first (full) match, ignore capture groups
           {start, length} = hd(match_list)
-          value = String.slice(text, start, length)
+          value = binary_part(text, start, length)
 
           %{
             type: :phone,
@@ -201,7 +221,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
 
     formatted_entities =
       Enum.map(formatted_matches, fn [{start, length}] ->
-        value = String.slice(text, start, length)
+        value = binary_part(text, start, length)
 
         # Check if it's obviously invalid (000-00-0000, etc.)
         if obviously_invalid_ssn?(value) do
@@ -225,7 +245,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
 
     unformatted_entities =
       Enum.map(unformatted_matches, fn [{start, length}] ->
-        value = String.slice(text, start, length)
+        value = binary_part(text, start, length)
         context = get_context(text, start, 20)
 
         if valid_ssn_format?(value) and ssn_context?(context) do
@@ -248,7 +268,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
 
     new_entities =
       Enum.map(matches, fn [{start, length}] ->
-        value = String.slice(text, start, length)
+        value = binary_part(text, start, length)
         normalized = String.replace(value, ~r/[-\s]/, "")
 
         if valid_credit_card?(normalized) do
@@ -281,7 +301,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
 
     ipv4_entities =
       Enum.map(ipv4_matches, fn [{start, length}] ->
-        value = String.slice(text, start, length)
+        value = binary_part(text, start, length)
 
         if valid_ipv4?(value) do
           %{
@@ -300,7 +320,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
 
     ipv6_entities =
       Enum.map(ipv6_matches, fn [{start, length}] ->
-        value = String.slice(text, start, length)
+        value = binary_part(text, start, length)
 
         %{
           type: :ip_address,
@@ -319,7 +339,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
 
     new_entities =
       Enum.map(matches, fn [{start, length}] ->
-        value = String.slice(text, start, length)
+        value = binary_part(text, start, length)
 
         %{
           type: :url,
@@ -331,6 +351,41 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIScanner do
       end)
 
     entities ++ new_entities
+  end
+
+  # Region PII scanning, driven by the locale packs' specs. A candidate becomes an entity
+  # only when its spec's validator confirms it, so bare digit runs are not reported as PII.
+
+  defp scan_region_type(text, type) do
+    case Locales.pii_spec(type) do
+      nil -> []
+      spec -> scan_spec(spec, text)
+    end
+  end
+
+  defp scan_spec(%{type: type, regex: regex, validate: validate, confidence: confidence}, text) do
+    regex
+    |> Regex.scan(text, return: :index)
+    |> Enum.map(fn [{start, length} | _] ->
+      # Regex index offsets are byte-based, so slice on bytes. String.slice would
+      # misalign when multibyte (accented) characters precede the match.
+      value = binary_part(text, start, length)
+
+      if validate.(value) do
+        %{
+          type: type,
+          value: value,
+          confidence: confidence,
+          start_pos: start,
+          end_pos: start + length
+        }
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp overlapping?(a, b) do
+    ranges_overlap?({a.start_pos, a.end_pos}, {b.start_pos, b.end_pos})
   end
 
   # Validation helpers

@@ -206,9 +206,10 @@ defmodule LlmGuard.Pipeline do
     continue_on_error = Map.get(config, :continue_on_error, false)
     confidence_threshold = Map.get(config, :confidence_threshold, 0.7)
     caching = Map.get(config, :caching)
+    languages = Map.get(config, :languages, [:en])
 
     Enum.reduce_while(detectors, [], fn detector, acc ->
-      result = execute_detector(detector, input, config, caching)
+      result = execute_detector(detector, input, languages, caching)
 
       case result.result do
         :detected ->
@@ -238,16 +239,17 @@ defmodule LlmGuard.Pipeline do
     |> Enum.reverse()
   end
 
-  defp execute_detector(detector, input, _config, caching) do
+  defp execute_detector(detector, input, languages, caching) do
     use_cache? = cache_enabled?(caching)
     use_result_cache? = use_cache? and Map.get(caching, :result_cache, true)
     cache_available? = use_result_cache? and Process.whereis(PatternCache) != nil
     cache_ttl = Map.get(caching || %{}, :result_ttl_seconds)
 
     input_hash = if cache_available?, do: PatternCache.hash_input(input), else: nil
+    cache_key = detector_cache_key(detector, languages)
 
     with true <- cache_available?,
-         {:ok, cached_result} <- PatternCache.get_result(input_hash, detector.name()) do
+         {:ok, cached_result} <- PatternCache.get_result(input_hash, cache_key) do
       emit_cache_telemetry(:result, true)
       emit_detector_telemetry(cached_result)
       cached_result
@@ -258,7 +260,7 @@ defmodule LlmGuard.Pipeline do
 
         result =
           try do
-            case detector.detect(input, []) do
+            case detector.detect(input, languages: languages) do
               {:safe, details} ->
                 duration_native = System.monotonic_time() - start_time
                 duration_ms = System.convert_time_unit(duration_native, :native, :millisecond)
@@ -303,7 +305,7 @@ defmodule LlmGuard.Pipeline do
         emit_detector_telemetry(result)
 
         if cache_available? do
-          PatternCache.put_result(input_hash, detector.name(), result, cache_ttl)
+          PatternCache.put_result(input_hash, cache_key, result, cache_ttl)
         end
 
         result
@@ -406,6 +408,11 @@ defmodule LlmGuard.Pipeline do
         hit: hit
       }
     )
+  end
+
+  # Cache key varies by language so an :en-only result never serves an :en+:pt_br request.
+  defp detector_cache_key(detector, languages) do
+    "#{detector.name()}:#{Enum.map_join(languages, "+", &Atom.to_string/1)}"
   end
 
   defp cache_enabled?(nil), do: false

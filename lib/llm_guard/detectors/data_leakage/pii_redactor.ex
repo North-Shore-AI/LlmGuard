@@ -105,12 +105,7 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIRedactor do
     # Apply redaction to each entity
     Enum.reduce(sorted_entities, text, fn entity, acc_text ->
       redacted_value = apply_strategy(entity, strategy, opts)
-
-      # Replace the PII in text
-      before = String.slice(acc_text, 0, entity.start_pos)
-      after_text = String.slice(acc_text, entity.end_pos..-1//1)
-
-      before <> redacted_value <> after_text
+      replace_at(acc_text, entity, redacted_value)
     end)
   end
 
@@ -170,17 +165,19 @@ defmodule LlmGuard.Detectors.DataLeakage.PIIRedactor do
       Enum.reduce(sorted_entities, {text, mapping}, fn entity, {acc_text, acc_mapping} ->
         redacted_value = apply_strategy(entity, strategy, opts)
 
-        # Add to mapping
         new_mapping = Map.put(acc_mapping, entity.value, redacted_value)
-
-        # Replace in text
-        before = String.slice(acc_text, 0, entity.start_pos)
-        after_text = String.slice(acc_text, entity.end_pos..-1//1)
-
-        {before <> redacted_value <> after_text, new_mapping}
+        {replace_at(acc_text, entity, redacted_value), new_mapping}
       end)
 
     {redacted_text, final_mapping}
+  end
+
+  # Entity offsets are byte-based (from Regex `:index`), so splice on bytes to stay
+  # aligned when multibyte characters precede the match. Entities are applied
+  # right-to-left, keeping earlier offsets valid as the text is rewritten.
+  defp replace_at(text, %{start_pos: start_pos, end_pos: end_pos}, replacement) do
+    binary_part(text, 0, start_pos) <>
+      replacement <> binary_part(text, end_pos, byte_size(text) - end_pos)
   end
 
   # Private strategy application functions

@@ -215,7 +215,8 @@ defmodule LlmGuard.Stage do
       jailbreak_detection: Map.get(options, :jailbreak_detection, false),
       data_leakage_prevention:
         Map.get(options, :pii_detection, false) || Map.get(options, :pii_redaction, false),
-      content_moderation: Map.get(options, :content_moderation, false)
+      content_moderation: Map.get(options, :content_moderation, false),
+      languages: get_in(options, [:options, :languages]) || [:en]
     )
   end
 

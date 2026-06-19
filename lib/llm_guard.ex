@@ -124,7 +124,8 @@ defmodule LlmGuard do
         pipeline_config = %{
           early_termination: true,
           confidence_threshold: config.confidence_threshold,
-          caching: Config.caching_config(config)
+          caching: Config.caching_config(config),
+          languages: config.languages
         }
 
         case Pipeline.run(sanitized, detectors, pipeline_config) do
@@ -201,7 +202,8 @@ defmodule LlmGuard do
           pipeline_config = %{
             early_termination: true,
             confidence_threshold: config.confidence_threshold,
-            caching: Config.caching_config(config)
+            caching: Config.caching_config(config),
+            languages: config.languages
           }
 
           case Pipeline.run(output, detectors, pipeline_config) do

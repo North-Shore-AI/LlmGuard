@@ -56,6 +56,7 @@ defmodule LlmGuard.Detectors.DataLeakage do
     else
       confidence_threshold = Keyword.get(opts, :confidence_threshold, 0.7)
       pii_types = Keyword.get(opts, :pii_types, nil)
+      languages = Keyword.get(opts, :languages, [:en])
 
       # Scan for PII
       entities =
@@ -65,7 +66,7 @@ defmodule LlmGuard.Detectors.DataLeakage do
             PIIScanner.scan_by_type(input, type)
           end)
         else
-          PIIScanner.scan(input)
+          PIIScanner.scan(input, languages)
         end
 
       if Enum.empty?(entities) do

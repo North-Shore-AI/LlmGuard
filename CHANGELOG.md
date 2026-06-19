@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Brazilian-Portuguese localization, selectable via a new `LlmGuard.Config`
+  `:languages` option (default `[:en]`, so existing behavior is unchanged):
+  - PT-BR prompt-injection and jailbreak patterns.
+  - Brazilian PII detection — CPF, CNPJ (check-digit validated), CEP, phone.
+  - `LlmGuard.Locale` behaviour + `LlmGuard.Locales` registry, so adding a
+    language is one module plus one registry entry, with no detector changes.
+
+### Fixed
+- PII detection and redaction now keep byte-aligned offsets on UTF-8 input, so
+  accented text no longer shifts or drops matches.
+
 ## [0.3.1] - 2025-12-28
 
 ### Changed

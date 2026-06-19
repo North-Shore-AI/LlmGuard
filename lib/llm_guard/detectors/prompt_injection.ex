@@ -39,6 +39,7 @@ defmodule LlmGuard.Detectors.PromptInjection do
 
   @behaviour LlmGuard.Detector
 
+  alias LlmGuard.Locales
   alias LlmGuard.Utils.Patterns
 
   # Returns pattern database for prompt injection detection
@@ -308,9 +309,10 @@ defmodule LlmGuard.Detectors.PromptInjection do
       {:safe, %{enabled: false}}
     else
       confidence_threshold = Keyword.get(opts, :confidence_threshold, 0.7)
+      languages = Keyword.get(opts, :languages, [:en])
 
-      # Build pattern matcher
-      patterns = injection_patterns()
+      # English base plus enabled locale packs.
+      patterns = injection_patterns() ++ Locales.injection_patterns(languages)
       matcher = Patterns.build_pattern_matcher(patterns)
 
       # Find all matching patterns

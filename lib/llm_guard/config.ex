@@ -19,6 +19,10 @@ defmodule LlmGuard.Config do
   - `:max_input_length` - Maximum input length in characters (default: `10_000`)
   - `:max_output_length` - Maximum output length in characters (default: `10_000`)
 
+  ### Languages
+  - `:languages` - Locales whose detection patterns and PII scanners are active
+    (default: `[:en]`). Supported: `:en`, `:pt_br`. Default behavior is unchanged.
+
   ### Custom Detectors
   - `:enabled_detectors` - List of custom detector modules to enable (default: `[]`)
 
@@ -77,6 +81,7 @@ defmodule LlmGuard.Config do
           max_input_length: pos_integer(),
           max_output_length: pos_integer(),
           enabled_detectors: [atom()],
+          languages: [atom()],
           rate_limiting: map() | nil,
           audit_logging: map() | nil,
           caching: map() | nil,
@@ -92,6 +97,7 @@ defmodule LlmGuard.Config do
             max_input_length: 10_000,
             max_output_length: 10_000,
             enabled_detectors: [],
+            languages: [:en],
             rate_limiting: nil,
             audit_logging: nil,
             caching: nil,
@@ -336,6 +342,7 @@ defmodule LlmGuard.Config do
     validate_max_length!(:max_input_length, config.max_input_length)
     validate_max_length!(:max_output_length, config.max_output_length)
     validate_enabled_detectors!(config.enabled_detectors)
+    validate_languages!(config.languages)
     :ok
   end
 
@@ -359,6 +366,15 @@ defmodule LlmGuard.Config do
   defp validate_enabled_detectors!(detectors) do
     unless is_list(detectors) do
       raise ArgumentError, "enabled_detectors must be a list, got: #{inspect(detectors)}"
+    end
+  end
+
+  defp validate_languages!(languages) do
+    supported = LlmGuard.Locales.supported()
+
+    unless is_list(languages) and Enum.all?(languages, &(&1 in supported)) do
+      raise ArgumentError,
+            "languages must be a list of #{inspect(supported)}, got: #{inspect(languages)}"
     end
   end
 

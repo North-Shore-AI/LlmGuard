@@ -37,6 +37,8 @@ defmodule LlmGuard.Detectors.Jailbreak do
 
   @behaviour LlmGuard.Detector
 
+  alias LlmGuard.Locales
+
   # Known jailbreak personas
   @jailbreak_personas [
     "DAN",
@@ -138,6 +140,7 @@ defmodule LlmGuard.Detectors.Jailbreak do
   @impl true
   def detect(input, opts \\ []) do
     threshold = Keyword.get(opts, :confidence_threshold, 0.7)
+    languages = Keyword.get(opts, :languages, [:en])
 
     # Handle empty input
     if input == "" do
@@ -147,7 +150,7 @@ defmodule LlmGuard.Detectors.Jailbreak do
       normalized = String.downcase(input)
 
       # Layer 1: Pattern matching
-      pattern_matches = detect_patterns(input, normalized)
+      pattern_matches = detect_patterns(input, normalized, languages)
 
       # Layer 2: Encoding detection
       encoding_matches = detect_encodings(input, normalized)
@@ -191,8 +194,15 @@ defmodule LlmGuard.Detectors.Jailbreak do
 
   # Private helper functions
 
-  defp detect_patterns(input, normalized) do
-    Enum.flat_map(patterns(), fn {category, pattern_list} ->
+  # Base categories plus enabled locale packs, merged per category.
+  defp pattern_set(languages) do
+    Map.merge(patterns(), Locales.jailbreak_patterns(languages), fn _category, base, extra ->
+      base ++ extra
+    end)
+  end
+
+  defp detect_patterns(input, normalized, languages) do
+    Enum.flat_map(pattern_set(languages), fn {category, pattern_list} ->
       Enum.flat_map(pattern_list, fn pattern ->
         if Regex.match?(pattern, input) or Regex.match?(pattern, normalized) do
           [{:pattern, category, 1.0}]

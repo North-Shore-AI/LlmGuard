@@ -134,6 +134,13 @@ User Input
 - Credit card numbers (98% with Luhn validation)
 - IP addresses (85-90% confidence)
 - URLs (90% confidence)
+- Brazilian (via `languages: [:pt_br]`): CPF, CNPJ (check-digit validated), CEP, phone
+
+### Languages
+
+Detection is English by default. Set `languages: [:en, :pt_br]` (default `[:en]`)
+to also match Brazilian-Portuguese injection/jailbreak phrasings and Brazilian
+PII. The English base always runs; locale packs add patterns on top of it.
 
 ### Coming Soon
 - Harmful content (violence, hate speech, etc.)
@@ -171,6 +178,9 @@ config = LlmGuard.Config.new(
   data_leakage_prevention: false,  # Coming soon
   content_moderation: false,  # Coming soon
   
+  # Languages whose detection patterns and PII are active (default: [:en])
+  languages: [:en, :pt_br],
+
   # Thresholds
   confidence_threshold: 0.7,
   max_input_length: 10_000,
